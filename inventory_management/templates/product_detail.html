@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ object.name }}</h1>
+    <p>{{ object.description }}</p>
+
+    <h2>Products</h2>
+    <ul class="list-group">
+        {% for item in object.productunit_set.all %}
+            <li class="list-group-item">
+                <a href="{% url 'unit_detail' item.id %}">{{ item.name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
