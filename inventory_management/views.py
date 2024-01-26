@@ -13,10 +13,22 @@ class CategoryListView(ListView):
     context_object_name = 'categories'
 
 
+class CategoryItemsView(ListView):
+    model = Product
+    template_name = 'category_items.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['category'] = Category.objects.get(pk=self.kwargs['pk'])
+        context['products'] = Product.objects.filter(category=context['category'])
+        return context
+
+
 class ProductListView(ListView):
     model = Product
     template_name = 'product_list.html'
     context_object_name = 'products'
+
 
 class ProductDetailView(DetailView):
     model = Product

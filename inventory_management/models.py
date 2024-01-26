@@ -1,10 +1,17 @@
 from django.db import models
+from django.utils.text import slugify
+
 import uuid
 
 
 class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Categoria", max_length=100)
+    slug = models.SlugField("Slug", max_length=100)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(Category, self).save(*args, **kwargs)
 
     @property
     def quantity(self):
@@ -24,6 +31,12 @@ class Product(models.Model):
     name = models.CharField("Nome do Produto", max_length=100)
     description = models.TextField("Descrição")
     price = models.DecimalField("Preço", max_digits=10, decimal_places=2)
+    image = models.ImageField("Imagem", upload_to='product_images', blank=True, null=True)
+    slug = models.SlugField("Slug", max_length=100)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(Product, self).save(*args, **kwargs)
 
     @property
     def quantity(self):
