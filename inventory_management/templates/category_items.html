@@ -9,11 +9,11 @@
                     <div class="row icon-boxes justify-content-evenly">
                         <div class="col-md-6 col-lg-3 d-flex align-items-stretch mb-5 mb-lg-0" data-aos="zoom-in"
                              data-aos-delay="200">
-                            <a href="{% url 'inventory_management:category_items' product.id %}"
+                            <a href="{% url 'inventory_management:product_detail' category.slug product.slug %}"
                                class="d-flex align-items-stretch mb-5 mb-lg-0">
                                 <div class="icon-box">
                                     <div class="icon"><i class="bi bi-bookmarks-fill"></i></div>
-                                    <h4 class="title"><a href="">{{ product.name }}</a></h4>
+                                    <h4 class="title">{{ product.name }}</h4>
                                     <p class="description">Veja em detalhes cada unidade deste produto.</p>
                                 </div>
                             </a>

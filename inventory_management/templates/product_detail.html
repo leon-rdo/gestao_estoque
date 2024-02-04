@@ -8,7 +8,7 @@
     <ul class="list-group">
         {% for item in object.productunit_set.all %}
             <li class="list-group-item">
-                <a href="{% url 'inventory_management:unit_detail' item.id %}">{{ item.name }}</a>
+                <a href="{% url 'inventory_management:product_unit_detail' item.product.category.slug item.product.slug item.slug %}">{{ item.product.name }} - {{ item.slug }}</a>
             </li>
         {% endfor %}
     </ul>
