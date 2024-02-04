@@ -7,7 +7,7 @@ import uuid
 class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Categoria", max_length=100)
-    slug = models.SlugField("Slug", max_length=100)
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -32,7 +32,7 @@ class Product(models.Model):
     description = models.TextField("Descrição")
     price = models.DecimalField("Preço", max_digits=10, decimal_places=2)
     image = models.ImageField("Imagem", upload_to='product_images', blank=True, null=True)
-    slug = models.SlugField("Slug", max_length=100)
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -55,6 +55,11 @@ class ProductUnit(models.Model):
     product = models.ForeignKey("Product", on_delete=models.CASCADE)
     location = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Localização")
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.id)
+        super(Category, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.product.name
@@ -75,6 +80,10 @@ class Building(models.Model):
     city = models.CharField("Cidade", max_length=100)
     state = models.CharField("Estado (UF)", max_length=2)
 
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.id)
+        super(Category, self).save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
@@ -87,6 +96,11 @@ class Room(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Sala", max_length=100)
     building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.id)
+        super(Category, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
