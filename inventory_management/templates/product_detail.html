@@ -1,15 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>{{ object.name }}</h1>
-    <p>{{ object.description }}</p>
+<div class="row justify-content-center align-items-center g-2">
 
-    <h2>Unidades</h2>
-    <ul class="list-group">
-        {% for item in object.productunit_set.all %}
-            <li class="list-group-item">
-                <a href="{% url 'inventory_management:product_unit_detail' item.product.category.slug item.product.slug item.slug %}">{{ item.product.name }} - {{ item.slug }}</a>
-            </li>
-        {% endfor %}
-    </ul>
+    <div class="col-12">
+        <h1>{{ object.name }}</h1>
+        <p>{{ object.description }}</p>
+        <h2>Preço</h2>
+        <p class="h5">R$ {{ object.price }}</p>
+    </div>
+
+    <div class="col-12">
+        <h2>Unidades</h2>
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Produto</th>
+                    <th>Localização</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in object.productunit_set.all %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'inventory_management:product_unit_detail' item.product.category.slug item.product.slug item.slug %}">
+                                {{ item.product.name }} - {{ item.slug }}
+                            </a>
+                        </td>
+                        <td>{{ item.location.building.name }} - {{ item.location.full_address }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+</div>
 {% endblock %}

@@ -109,6 +109,9 @@ LANGUAGE_CODE = 'pt-br'
 
 TIME_ZONE = 'America/Belem'
 
+THOUSAND_SEPARATOR='.',
+USE_THOUSAND_SEPARATOR=True
+
 USE_I18N = True
 
 USE_TZ = True

@@ -6,8 +6,8 @@
         <h1 class="display-1">Escanear</h1>
         <h2 class="h4">Aponte a câmera para o QR code do produto para ver detalhes.</h2>
     </div>
-    <div class="col-12">
-        <div id="reader" width="600px"></div>
+    <div class="col-12 col-md-6 col-lg-4">
+        <div id="reader" width="100%"></div>
     </div>
 </div>
 {% endblock content %}
@@ -16,15 +16,16 @@
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
     function onScanSuccess(decodedText, decodedResult) {
-        // Supondo que você tenha os slugs da categoria e do produto disponíveis
+        // {% if user.is_authenticated %}
         var categorySlug = "categoria-exemplo";
         var productSlug = "produto-exemplo";
 
-        // Construa a URL
         var url = "/categorias/" + categorySlug + "/produto/" + productSlug + "/unidade/" + decodedText + "/";
 
-        // Redirecionar para a URL
         window.location.href = url;
+        // {% else %}
+        alert("Você precisa estar logado para ver detalhes do produto.");
+        // {% endif %}
     }
 
     function onScanFailure(error) {
