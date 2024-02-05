@@ -46,6 +46,10 @@ class ScanQRView(TemplateView):
     template_name = 'scan_qr.html'
 
 
+class AboutView(TemplateView):
+    template_name = 'about.html'
+
+
 class AdressesView(ListView):
     model = Building
     template_name = 'adresses.html'
