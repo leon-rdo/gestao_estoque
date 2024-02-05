@@ -46,6 +46,17 @@ class ScanQRView(TemplateView):
     template_name = 'scan_qr.html'
 
 
+class AdressesView(ListView):
+    model = Building
+    template_name = 'adresses.html'
+    context_object_name = 'adresses'
+
+
+class AddressDetailView(DetailView):
+    model = Building
+    template_name = 'address.html'
+
+
 class GetProductLocationView(View):
     def get(self, request, *args, **kwargs):
         product_unit = ProductUnit.objects.get(slug=self.kwargs.get('slug'))

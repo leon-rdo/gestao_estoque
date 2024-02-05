@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Endereços</h1>
+        <div class="row icon-boxes justify-content-evenly">
+            {% if adresses %}
+            {% for address in adresses %}
+            <div class="col-md-6 col-lg-3 d-flex align-items-stretch mb-5 mb-lg-0" data-aos="zoom-in"
+                data-aos-delay="200">
+                <a href="{% url 'inventory_management:address_detail' address.slug %}" class="d-flex align-items-stretch mb-5 mb-lg-0">
+                    <div class="icon-box square-icon-box">
+                        <div class="icon"><i class="bi bi-building"></i></div>
+                        <h4 class="title">{{ address.name }}</h4>
+                        <p class="description">
+                            
+                            <address><i class="bi bi-geo-alt-fill"></i> {{ address.full_address }}</address>
+                        </p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>Nenhum endereço cadastrado.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock content %}

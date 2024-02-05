@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>{{ object.name }}</h1>
+        <ul class="row list-group">
+            {% for room in object.room_set.all %}
+            <li class="list-group-item col-md-6 col-lg-3" data-aos="zoom-in" data-aos-delay="200">
+                <div class="icon"><i class="bi bi-view-list"></i></div>
+                <h4 class="title">Sala {{ room.name }}</h4>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock content %}
