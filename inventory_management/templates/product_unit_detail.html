@@ -6,7 +6,7 @@
         <h1>{{ object.product }}</h1>
         <p><i class="bi bi-geo-alt-fill"></i> Localização atual: {{ object.location.full_address }}</p>
     </div>
-    <!-- <div class="col-12">
+    <div class="col-12">
         <h2>Movimentações</h2>
         <table class="table table-striped">
             <thead>
@@ -18,9 +18,16 @@
                 </tr>
             </thead>
             <tbody>
-                ...
+                {% for transfer in object.stocktransfer_set.all %}
+                <tr>
+                    <td>{{ transfer.transfer_date }}</td>
+                    <td>{{ transfer.origin }}</td>
+                    <td>{{ transfer.destination }}</td>
+                    <td>{{ transfer.notes }}</td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
-    </div> -->
+    </div>
 </div>
 {% endblock %}

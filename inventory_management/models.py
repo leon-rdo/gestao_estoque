@@ -69,6 +69,22 @@ class ProductUnit(models.Model):
         verbose_name = "Unidade de Produto"
 
 
+class StockTransfer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
+    origin = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
+    destination = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
+    transfer_date = models.DateField("Data da Transferência")
+    observations = models.TextField("Observações", blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.product_unit.product.name} - {self.origin.building} (sala {self.origin}) -> {self.destination.building} (sala {self.destination})"
+
+    class Meta:
+        verbose_name_plural = "Transferências de Estoque"
+        verbose_name = "Transferência de Estoque"
+
+
 class Building(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome do Prédio", max_length=100)
@@ -115,6 +131,3 @@ class Room(models.Model):
     class Meta:
         verbose_name_plural = "Salas"
         verbose_name = "Sala"
-
-
-# class StockTransfer(models.Model):

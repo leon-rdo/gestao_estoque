@@ -26,6 +26,13 @@ class ProductUnitAdmin(admin.ModelAdmin):
     search_fields = ('product__name', 'location__name')
 
 
+@admin.register(StockTransfer)
+class StockTransferAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'transfer_date')
+    search_fields = ('product_unit__product__name', 'origin__name', 'destination__name')
+    list_filter = ('transfer_date',)
+
+
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
     list_display = ('name', 'cep', 'street', 'number', 'complement', 'neighborhood', 'city', 'state')
@@ -36,3 +43,5 @@ class BuildingAdmin(admin.ModelAdmin):
 class RoomAdmin(admin.ModelAdmin):
     list_display = ('name', 'building')
     search_fields = ('name', 'building__name')
+
+
