@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.text import slugify
 
@@ -59,7 +60,7 @@ class Product(models.Model):
 
 class ProductUnit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    product = models.ForeignKey("Product", on_delete=models.CASCADE)
+    product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
     location = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Localização")
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
@@ -69,7 +70,7 @@ class ProductUnit(models.Model):
         super(ProductUnit, self).save(*args, **kwargs)
 
     def __str__(self):
-        return self.product.name
+        return f'{self.product.name} - {self.slug}'
 
     class Meta:
         verbose_name_plural = "Unidades de Produto"
@@ -86,6 +87,14 @@ class StockTransfer(models.Model):
     destination = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
     transfer_date = models.DateField("Data da Transferência")
     observations = models.TextField("Observações", blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.origin == self.destination:
+            raise ValidationError("Origem e destino não podem ser iguais.")
+        
+        self.product_unit.location = self.destination
+        self.product_unit.save()
+        super(StockTransfer, self).save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product_unit.product.name} - {self.origin.building} (sala {self.origin}) -> {self.destination.building} (sala {self.destination})"
@@ -139,7 +148,7 @@ class Room(models.Model):
         super(Room, self).save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return f'{self.building.name} - sala {self.name}'
 
     class Meta:
         verbose_name_plural = "Salas"

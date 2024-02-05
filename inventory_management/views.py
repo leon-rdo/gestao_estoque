@@ -1,5 +1,6 @@
-from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView, ListView, DetailView
+from django.http import JsonResponse
+from django.views import View
 
 from .models import *
 
@@ -43,3 +44,9 @@ class ProductUnitDetailView(DetailView):
 
 class ScanQRView(TemplateView):
     template_name = 'scan_qr.html'
+
+
+class GetProductLocationView(View):
+    def get(self, request, *args, **kwargs):
+        product_unit = ProductUnit.objects.get(slug=self.kwargs.get('slug'))
+        return JsonResponse({'location': str(product_unit.location.slug)})

@@ -58,31 +58,27 @@
 
         <nav id="navbar" class="navbar">
             <ul>
-                <li><a class="nav-link scrollto" href="{% url 'inventory_management:index' %}">Início</a></li>
-                <li><a class="nav-link scrollto" href="#about">Sobre</a></li>
-                <li class="dropdown"><a href="#"><span>Mais Opções</span> <i class="bi bi-chevron-down"></i></a>
+                <li><a class="nav-link" href="{% url 'inventory_management:index' %}">Início</a></li>
+                <li><a class="nav-link" href="#">Sobre</a></li>
+                <li><a class="nav-link" href="#">Endereços</a></li>
+                <!-- <li class="dropdown"><a href="#"><span>Mais Opções</span> <i class="bi bi-chevron-down"></i></a>
                     <ul>
                         <li><a href="#">Drop Down 1</a></li>
                         <li class="dropdown"><a href="#"><span>Deep Drop Down</span> <i class="bi bi-chevron-right"></i></a>
                             <ul>
                                 <li><a href="#">Deep Drop Down 1</a></li>
                                 <li><a href="#">Deep Drop Down 2</a></li>
-                                <li><a href="#">Deep Drop Down 3</a></li>
-                                <li><a href="#">Deep Drop Down 4</a></li>
-                                <li><a href="#">Deep Drop Down 5</a></li>
                             </ul>
                         </li>
                         <li><a href="#">Drop Down 2</a></li>
-                        <li><a href="#">Drop Down 3</a></li>
-                        <li><a href="#">Drop Down 4</a></li>
                     </ul>
-                </li>
-                <li><a class="nav-link scrollto" href="{% url 'inventory_management:scan_qr' %}">Escanear QR Code</a></li>
+                </li> -->
+                <li><a class="nav-link" href="{% url 'inventory_management:scan_qr' %}">Escanear QR Code</a></li>
                 {% if user.is_staff %}
                     <li><a class="nav-link" href="{% url 'admin:index' %}">Administração</a></li>
                 {% endif %}
                 {% if not user.is_authenticated %}
-                    <li><a class="getstarted scrollto" href="{% url 'admin:login' %}">Entrar</a></li>
+                    <li><a class="getstarted" href="{% url 'admin:login' %}">Entrar</a></li>
                 {% endif %}
             </ul>
             <i class="bi bi-list mobile-nav-toggle"></i>
