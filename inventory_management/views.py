@@ -39,3 +39,7 @@ class ProductDetailView(DetailView):
 class ProductUnitDetailView(DetailView):
     model = ProductUnit
     template_name = 'product_unit_detail.html'
+
+
+class ScanQRView(TemplateView):
+    template_name = 'scan_qr.html'

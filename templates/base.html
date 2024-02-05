@@ -77,9 +77,13 @@
                         <li><a href="#">Drop Down 4</a></li>
                     </ul>
                 </li>
-                <li><a class="nav-link scrollto" href="#contact">Contato</a></li>
-                <li><a class="nav-link" href="{% url 'admin:index' %}">Administração</a></li>
-                <li><a class="getstarted scrollto" href="#about">Entrar</a></li>
+                <li><a class="nav-link scrollto" href="{% url 'inventory_management:scan_qr' %}">Escanear QR Code</a></li>
+                {% if user.is_staff %}
+                    <li><a class="nav-link" href="{% url 'admin:index' %}">Administração</a></li>
+                {% endif %}
+                {% if not user.is_authenticated %}
+                    <li><a class="getstarted scrollto" href="{% url 'admin:login' %}">Entrar</a></li>
+                {% endif %}
             </ul>
             <i class="bi bi-list mobile-nav-toggle"></i>
         </nav><!-- .navbar -->
@@ -185,6 +189,7 @@
 <!-- Template Main JS File -->
 <script src="{% static 'OnePage/assets/js/main.js' %}"></script>
 
+{% block extra_scripts %}{% endblock extra_scripts %}
 </body>
 
 </html>

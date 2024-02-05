@@ -4,14 +4,12 @@
     <div class="row justify-content-center align-items-center g-2">
         <div class="col-12">
             <h1>Categorias</h1>
-            <div class="row icon-boxes justify-content-evenly">
+            <div class="row icon-boxes justify-content-evenly mt-3">
                 {% for category in categories %}
                     <div class="row icon-boxes justify-content-evenly">
-                        <div class="col-md-6 col-lg-3 d-flex align-items-stretch mb-5 mb-lg-0" data-aos="zoom-in"
-                             data-aos-delay="200">
-                            <a href="{% url 'inventory_management:category_items' category.slug %}"
-                               class="d-flex align-items-stretch mb-5 mb-lg-0">
-                                <div class="icon-box">
+                        <div class="col-md-6 col-lg-3 d-flex align-items-stretch mb-5 mb-lg-0" data-aos="zoom-in" data-aos-delay="200">
+                            <a href="{% url 'inventory_management:category_items' category.slug %}" class="d-flex align-items-stretch mb-5 mb-lg-0">
+                                <div class="icon-box shadow p-3">
                                     <div class="icon"><i class="bi bi-bookmarks-fill"></i></div>
                                     <h4 class="title">{{ category.name }}</h4>
                                     <p class="description">Veja os produtos desta categoria.</p>

@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify
 
 import uuid
@@ -23,6 +24,9 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = "Categorias"
         verbose_name = "Categoria"
+
+    def get_absolute_url(self):
+        return reverse('inventory_management:category_items', kwargs={'slug': self.slug})
 
 
 class Product(models.Model):
@@ -49,6 +53,9 @@ class Product(models.Model):
         verbose_name_plural = "Produtos"
         verbose_name = "Produto"
 
+    def get_absolute_url(self):
+        return reverse('inventory_management:product_detail', kwargs={'category_slug':self.category.slug, 'slug': self.slug})
+
 
 class ProductUnit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -68,6 +75,9 @@ class ProductUnit(models.Model):
         verbose_name_plural = "Unidades de Produto"
         verbose_name = "Unidade de Produto"
 
+    def get_absolute_url(self):
+        return reverse('inventory_management:product_unit_detail', kwargs={'category_slug':self.product.category.slug, 'product_slug':self.product.slug, 'slug': self.slug})
+
 
 class StockTransfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -83,6 +93,9 @@ class StockTransfer(models.Model):
     class Meta:
         verbose_name_plural = "Transferências de Estoque"
         verbose_name = "Transferência de Estoque"
+
+    def get_absolute_url(self):
+        return reverse('inventory_management:product_unit_detail', kwargs={'category_slug':self.product_unit.product.category.slug, 'product_slug':self.product_unit.product.slug, 'slug': self.product_unit.slug})
 
 
 class Building(models.Model):

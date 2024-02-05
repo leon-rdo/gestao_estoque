@@ -4,7 +4,10 @@
 <div class="row justify-content-center align-items-center g-2">
     <div class="col-12">
         <h1>{{ object.product }}</h1>
-        <p><i class="bi bi-geo-alt-fill"></i> Localização atual: {{ object.location.full_address }}</p>
+        <span>
+            <i class="bi bi-geo-alt-fill"></i>
+            Localização atual: <address><strong>{{ object.location.building.name }}</strong> - {{ object.location.full_address }}</address>
+        </span>
     </div>
     <div class="col-12">
         <h2>Movimentações</h2>
@@ -23,7 +26,7 @@
                     <td>{{ transfer.transfer_date }}</td>
                     <td>{{ transfer.origin }}</td>
                     <td>{{ transfer.destination }}</td>
-                    <td>{{ transfer.notes }}</td>
+                    <td>{{ transfer.observations }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

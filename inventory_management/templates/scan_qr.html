@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center g-2">
+    <div class="col-12">
+        <h1 class="display-1">Escanear</h1>
+        <h2 class="h4">Aponte a câmera para o QR code do produto para ver detalhes.</h2>
+    </div>
+    <div class="col-12">
+        <div id="reader" width="600px"></div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+    function onScanSuccess(decodedText, decodedResult) {
+        // Supondo que você tenha os slugs da categoria e do produto disponíveis
+        var categorySlug = "categoria-exemplo";
+        var productSlug = "produto-exemplo";
+
+        // Construa a URL
+        var url = "/categorias/" + categorySlug + "/produto/" + productSlug + "/unidade/" + decodedText + "/";
+
+        // Redirecionar para a URL
+        window.location.href = url;
+    }
+
+    function onScanFailure(error) {
+        // handle scan failure, usually better to ignore and keep scanning.
+        // for example:
+        console.warn(`Code scan error = ${error}`);
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: { width: 250, height: 250 } },  /* verbose= */ false);
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+</script>
+{% endblock extra_scripts %}
