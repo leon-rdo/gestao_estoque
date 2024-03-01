@@ -1,15 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center align-items-center g-2">
+<div class="row justify-content-center g-5">
 
-    <div class="col-12">
+    <div class="col-12 col-md-6">
         <h1>{{ object.name }}</h1>
-        <p>{{ object.description }}</p>
+        <p>{{ object.description|linebreaks }}</p>
         <h2>Preço</h2>
         <p class="h5">R$ {{ object.price }}</p>
     </div>
 
+    <figure class="col-12 col-md-6">
+        <img src="{{ object.image.url }}" class="img-fluid" alt="{{ object.name }}">
+        <figcaption class="figure-caption text-center">{{ object.category }} {{ object.name }}<br></figcaption>
+    </figure>
+
+    {% if object.productunit_set.count != 0 %}         
     <div class="col-12">
         <h2>Unidades</h2>
         <table class="table table-striped table-bordered">
@@ -33,6 +39,6 @@
             </tbody>
         </table>
     </div>
-    
+    {% endif %}
 </div>
 {% endblock %}

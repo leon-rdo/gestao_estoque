@@ -1,25 +1,29 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="row justify-content-center align-items-center g-2">
-        <div class="col-12">
-            <h1>{{ category.name }}</h1>
-            <div class="row icon-boxes justify-content-evenly">
-                {% for product in products %}
-                    <div class="row icon-boxes justify-content-evenly">
-                        <div class="col-md-6 col-lg-3 d-flex align-items-stretch mb-5 mb-lg-0" data-aos="zoom-in"
-                             data-aos-delay="200">
-                            <a href="{% url 'inventory_management:product_detail' category.slug product.slug %}" class="d-flex align-items-stretch mb-5 mb-lg-0">
-                                <div class="icon-box square-icon-box shadow p-3">
-                                    <div class="icon"><i class="bi bi-diagram-2"></i></div>
-                                    <h4 class="title">{{ product.name }}</h4>
-                                    <p class="description">Veja em detalhes cada unidade deste produto.</p>
-                                </div>
-                            </a>
+<div class="row justify-content-center align-items-center g-2">
+    <div class="col-12">
+        <h1>{{ category.name }}</h1>
+        <div class="row icon-boxes justify-content-evenly">
+            <div class="row icon-boxes justify-content-evenly">{% for product in products %}
+                <div class="col-md-6 col-lg-3 d-flex align-items-stretch mb-5 mb-lg-0" data-aos="zoom-in"
+                    data-aos-delay="200">
+                    <a href="{% url 'inventory_management:product_detail' category.slug product.slug %}"
+                        class="d-flex align-items-stretch mb-5 mb-lg-0">
+                        <div class="icon-box square-icon-box shadow p-3">
+                            <div class="icon"><i class="bi bi-diagram-2"></i></div>
+                            <h4 class="title">{{ product.name }}</h4>
+                            <p class="description">Veja em detalhes cada unidade deste produto.</p>
                         </div>
-                    </div>
+                    </a>
+                </div>
+                {% empty %}
+                <div class="alert alert-warning" role="alert">
+                    <strong>Opa!</strong> Nenhum produto dessa classe foi cadastrado ainda.
+                </div>
                 {% endfor %}
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
