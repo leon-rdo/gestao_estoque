@@ -8,12 +8,14 @@
         <p>{{ object.description|linebreaks }}</p>
         <h2>Preço</h2>
         <p class="h5">R$ {{ object.price }}</p>
-    </div>
-
+    </div>  
+    
+    {% if object.image %}  
     <figure class="col-12 col-md-6">
         <img src="{{ object.image.url }}" class="img-fluid" alt="{{ object.name }}">
         <figcaption class="figure-caption text-center">{{ object.category }} {{ object.name }}<br></figcaption>
     </figure>
+    {% endif %}
 
     {% if object.productunit_set.count != 0 %}         
     <div class="col-12">
