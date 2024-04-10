@@ -63,12 +63,19 @@ class ProductUnit(models.Model):
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
     location = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Localização")
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
+    quantity = models.IntegerField("Quantidade", default=1)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
-
+        for i in range(1, self.quantity):
+                ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date)
+                
+    def clean(self):
+        if self.quantity < 1:
+            raise ValidationError("A quantidade deve ser maior que 0.")
+                
     def __str__(self):
         return f'{self.product.name} - {self.slug}'
 
