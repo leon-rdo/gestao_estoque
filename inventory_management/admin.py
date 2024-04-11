@@ -53,11 +53,21 @@ class StockTransferAdmin(admin.ModelAdmin):
     class Media:
         js = ('admin/autocomplete_origin.js',)
 
+class RoomInline(admin.StackedInline):
+    model = Room
+    
+    def get_extra(self, request, obj=None, **kwargs):
+        if obj:
+            return 0
+        return 1 
 
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
     list_display = ('name', 'cep', 'street', 'number', 'complement', 'neighborhood', 'city', 'state')
     search_fields = ('name', 'cep', 'street', 'number', 'complement', 'neighborhood', 'city', 'state')
+    inlines = [
+        RoomInline,
+    ]
 
     class Media:
         js = ('admin/autocomplete_address.js',)
