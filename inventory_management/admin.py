@@ -77,5 +77,15 @@ class BuildingAdmin(admin.ModelAdmin):
 class RoomAdmin(admin.ModelAdmin):
     list_display = ('name', 'building')
     search_fields = ('name', 'building__name')
+    readonly_fields = [field.name for field in Room._meta.fields]
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_delete_permission(self, request):
+        return False
+    
+    def has_change_permission(self, request):
+        return False
 
 
