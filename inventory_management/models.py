@@ -47,6 +47,8 @@ class Product(models.Model):
     def quantity(self):
         return self.productunit_set.count()
 
+    quantity.fget.short_description = "Quantidade"
+
     def __str__(self):
         return self.name
 
