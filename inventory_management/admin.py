@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import *
+from django import forms
 
 
 admin.site.site_header = 'Gestão de Estoque'
@@ -20,10 +21,17 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location', 'purchase_date')
     search_fields = ('product__name', 'location__name')
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if obj:
+            form.base_fields['quantity'].widget = forms.HiddenInput()
+        return form
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
