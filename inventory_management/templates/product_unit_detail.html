@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if user.is_authenticated %}
 <div class="row justify-content-center align-items-center g-2 pt-3">
     <div class="col-12">
         <h1>{{ object.product }}</h1>
@@ -37,29 +36,6 @@
 <div class="row justify-content-center align-items-center g-2">
     <div id="qrcode" class="col-12 col-md-6 d-flex justify-content-center my-3"></div>
 </div>
-{% else %}
-<div class="row justify-content-center align-items-center g-2 pb-3">
-    <div class="col-12 col-md-6">
-        <h1>{{ object.product }}</h1>
-        <span>
-            <i class="bi bi-geo-alt-fill"></i>
-            Localização do produto: <address><strong>{{ object.location.building.name }}</strong> - {{ object.location.full_address }}</address>
-        </span>
-    </div>
-    {% if object.product.image %}            
-    <figure class="col-12 col-md-6">
-        <img src="{{ object.product.image.url }}" alt="{{ object.product.name }}" class="img-fluid">
-        <figcaption class="figure-caption text-center">
-            <h2>Preço</h2>
-            <p class="h5">R$ {{ object.product.price }}</p>
-        </figcaption>
-    </figure>
-    {% endif %}
-    <div class="col-12 fs-5">
-        {{ object.product.description|linebreaks }}
-    </div>
-</div>
-{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}

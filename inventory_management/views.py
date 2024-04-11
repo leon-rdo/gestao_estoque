@@ -1,7 +1,7 @@
 from django.views.generic import TemplateView, ListView, DetailView
 from django.http import JsonResponse
 from django.views import View
-
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import *
 
 
@@ -37,7 +37,8 @@ class ProductDetailView(DetailView):
     template_name = 'product_detail.html'
 
 
-class ProductUnitDetailView(DetailView):
+class ProductUnitDetailView(LoginRequiredMixin, DetailView):
+    login_url = '/admin/'
     model = ProductUnit
     template_name = 'product_unit_detail.html'
 
