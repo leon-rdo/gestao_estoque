@@ -6,3 +6,4 @@ python-dotenv==1.0.1
 sqlparse==0.4.4
 qrcode==7.4.2
 reportlab==4.1.0
+requests==2.31.0
