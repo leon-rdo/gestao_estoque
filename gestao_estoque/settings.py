@@ -154,6 +154,7 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = 'admin:index'
+LOGOUT_REDIRECT_URL = 'admin:index'
 
 JAZZMIN_SETTINGS = {
     "welcome_sign": "Bem-vindo ao painel de administração da Gestão de Estoque",
