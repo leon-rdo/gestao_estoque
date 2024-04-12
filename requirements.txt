@@ -1,9 +1,12 @@
 asgiref==3.7.2
+chardet==5.2.0
 Django==5.0.1
+django-jazzmin==2.6.1
 mysqlclient==2.2.4
 pillow==10.2.0
+pypng==0.20220715.0
 python-dotenv==1.0.1
-sqlparse==0.4.4
 qrcode==7.4.2
 reportlab==4.1.0
-requests==2.31.0
+sqlparse==0.4.4
+typing_extensions==4.11.0
