@@ -18,7 +18,6 @@ admin.site.site_header = 'Gestão de Estoque'
 admin.site.site_title = 'Administração'
 admin.site.index_title = 'Gestão de Estoque'
 
-
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'quantity')
