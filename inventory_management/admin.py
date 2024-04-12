@@ -3,7 +3,7 @@ import tempfile
 import zipfile
 import qrcode
 from django import forms
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.text import slugify
@@ -132,5 +132,6 @@ class RoomAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request):
         return False
-
-
+    
+    def change_view(self, request, object_id):
+        return HttpResponseRedirect(reverse('admin:inventory_management_building_changelist'))
