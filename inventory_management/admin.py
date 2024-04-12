@@ -125,8 +125,11 @@ class BuildingAdmin(admin.ModelAdmin):
 class RoomAdmin(admin.ModelAdmin):
     
     def change_view(self, request, object_id):
-        return HttpResponseRedirect(reverse('admin:inventory_management_building_changelist'))
-   
+        room = self.get_object(request, object_id)
+        building_id = room.building.id
+        building_change_url = reverse('admin:inventory_management_building_change', args=[building_id])
+        return HttpResponseRedirect(building_change_url)
+    
     def has_view_permission(self, request):
         return False
     
