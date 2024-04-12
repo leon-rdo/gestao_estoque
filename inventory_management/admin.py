@@ -10,7 +10,7 @@ from django.utils.text import slugify
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from requests import request
+# from requests import request
 
 from django.contrib import admin
 from .models import *
@@ -19,18 +19,19 @@ admin.site.site_header = 'Gestão de Estoque'
 admin.site.site_title = 'Administração'
 admin.site.index_title = 'Gestão de Estoque'
 
-
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'quantity')
     search_fields = ('name',)
+    list_filter = ('name',)
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'quantity')
     search_fields = ('name',)
-
+    list_filter = ('category',)
+    
 def generate_qr_codes_to_pdf(queryset, file_path, request):
     c = canvas.Canvas(file_path, pagesize=letter)
 
@@ -90,6 +91,7 @@ download_qr_codes.short_description = "Baixar QR Codes"
 class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location', 'purchase_date')
     search_fields = ('product__name', 'location__name')
+    list_filter = ('product' ,'purchase_date', 'location')
     actions = [download_qr_codes]
 
     def get_form(self, request, obj=None, **kwargs):
@@ -108,7 +110,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
 class StockTransferAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'transfer_date')
     search_fields = ('product_unit__product__name', 'origin__name', 'destination__name')
-    list_filter = ('transfer_date',)
+    list_filter = ('transfer_date', 'origin', 'destination')
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -130,28 +132,30 @@ class RoomInline(admin.StackedInline):
 class BuildingAdmin(admin.ModelAdmin):
     list_display = ('name', 'cep', 'street', 'number', 'complement', 'neighborhood', 'city', 'state')
     search_fields = ('name', 'cep', 'street', 'number', 'complement', 'neighborhood', 'city', 'state')
+    list_filter = ('street', 'neighborhood', 'city')
     inlines = [
         RoomInline,
     ]
-
+    
     class Media:
         js = ('admin/autocomplete_address.js',)
 
-
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
-    list_display = ('name', 'building')
-    search_fields = ('name', 'building__name')
-    readonly_fields = [field.name for field in Room._meta.fields]
+    
+    def change_view(self, request, object_id):
+        room = self.get_object(request, object_id)
+        building_id = room.building.id
+        building_change_url = reverse('admin:inventory_management_building_change', args=[building_id])
+        return HttpResponseRedirect(building_change_url)
+    
+    def has_view_permission(self, request):
+        return False
     
     def has_add_permission(self, request):
         return False
     
-    def has_delete_permission(self, request):
-        return False
-    
     def has_change_permission(self, request):
         return False
-    
-    def change_view(self, request, object_id):
-        return HttpResponseRedirect(reverse('admin:inventory_management_building_changelist'))
+
+

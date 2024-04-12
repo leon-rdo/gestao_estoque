@@ -55,7 +55,7 @@ class Product(models.Model):
     class Meta:
         verbose_name_plural = "Produtos"
         verbose_name = "Produto"
-
+    
     def get_absolute_url(self):
         return reverse('inventory_management:product_detail', kwargs={'category_slug':self.category.slug, 'slug': self.slug})
 
@@ -157,7 +157,7 @@ class Room(models.Model):
         super(Room, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.building.name} - sala {self.name}'
+        return f'{self.building.name} - Sala {self.name}'
 
     class Meta:
         verbose_name_plural = "Salas"

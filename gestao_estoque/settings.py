@@ -39,6 +39,7 @@ CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS').split(',') if os.e
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -151,3 +152,32 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = 'admin:index'
+
+JAZZMIN_SETTINGS = {
+    "welcome_sign": "Bem-vindo ao painel de administração da Gestão de Estoque",
+    "site_header": "Administração",
+    "hide_models": ["inventory_management.room"],
+    "topmenu_links": [
+
+        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Categorias", "url": "admin:inventory_management_category_changelist", "permissions": ["inventory_management.view_category"]},
+        {"name": "Produtos", "url": "admin:inventory_management_product_changelist", "permissions": ["inventory_management.view_product"]},
+        {"name": "Unidades de Produto", "url": "admin:inventory_management_productunit_changelist", "permissions": ["inventory_management.view_productunit"]},
+        {"name": "Transferências", "url": "admin:inventory_management_stockTransfer_changelist", "permissions": ["inventory_management.view_stockTransfer"]},
+        {"name": "Voltar para o site", "url": "/"},
+    ],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "inventory_management": "fas fa-boxes",
+        "inventory_management.category": "fas fa-tag",
+        "inventory_management.product": "fas fa-box-open",
+        "inventory_management.stocktransfer": "fas fa-exchange-alt",
+        "inventory_management.productunit": "fas fa-cube",
+        "inventory_management.building": "fas fa-building",
+    },
+
+}
