@@ -10,6 +10,7 @@ from django.utils.text import slugify
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from requests import request
 
 from django.contrib import admin
 from .models import *
@@ -30,38 +31,57 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'quantity')
     search_fields = ('name',)
 
-def generate_qr_code_to_pdf(data, file_path):
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(data)
-    qr.make(fit=True)
-
-    img = qr.make_image(fill_color="black", back_color="white")
-
-    # Crie um arquivo PDF usando o ReportLab
+def generate_qr_codes_to_pdf(queryset, file_path, request):
     c = canvas.Canvas(file_path, pagesize=letter)
-    c.drawInlineImage(img, 100, 200)  # Altere as coordenadas conforme necessário
+
+    page_width, page_height = letter
+    host = request.get_host()
+
+    for product_unit in queryset:
+        # Construir a URL absoluta do item
+        absolute_url = f"http://{host}{product_unit.get_absolute_url()}"
+        
+        # Gerar QR code para a URL
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(absolute_url)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Salvar a imagem do QR code em um arquivo temporário
+        qr_img_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        qr_img.save(qr_img_temp_file)
+
+        # Determinar a posição central do QR code na página
+        qr_width, qr_height = qr_img.size
+        x_coordinate = (page_width - qr_width) / 2
+        y_coordinate = (page_height - qr_height) / 2
+        
+        # Adicionar o QR code ao PDF
+        c.drawImage(qr_img_temp_file.name, x_coordinate, y_coordinate, width=qr_width, height=qr_height)
+        
+        # Fechar e excluir o arquivo temporário
+        qr_img_temp_file.close()
+
+        # Adicionar uma nova página para o próximo QR code
+        c.showPage()
+
     c.save()
 
 def download_qr_codes(modeladmin, request, queryset):
-    temp_dir = tempfile.TemporaryDirectory()
-    zip_buffer = BytesIO()
-    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
-        for product_unit in queryset:
-            # Construir a URL absoluta do item
-            absolute_url = request.build_absolute_uri(product_unit.get_absolute_url())
-            qr_code_path = os.path.join(temp_dir.name, f"{slugify(product_unit.product.name)}_{product_unit.slug}.pdf")
-            generate_qr_code_to_pdf(absolute_url, qr_code_path)
-            zip_file.write(qr_code_path, os.path.basename(qr_code_path))
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    generate_qr_codes_to_pdf(queryset, temp_file.name, request)
 
-    temp_dir.cleanup()
+    with open(temp_file.name, 'rb') as f:
+        response = HttpResponse(f.read(), content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="qr_codes.pdf"'
 
-    response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
-    response['Content-Disposition'] = 'attachment; filename="qr_codes.zip"'
+    temp_file.close()
+
     return response
 
 download_qr_codes.short_description = "Baixar QR Codes"
