@@ -72,12 +72,15 @@ class ProductUnit(models.Model):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
         for i in range(1, self.quantity):
-                ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date)
-                
+            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date,)
+
+        self.__class__.objects.filter(id=self.id).update(quantity=1)
+
+
     def clean(self):
         if self.quantity < 1:
             raise ValidationError("A quantidade deve ser maior que 0.")
-                
+        
     def __str__(self):
         return f'{self.product.name} - {self.slug}'
 
