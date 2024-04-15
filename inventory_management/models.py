@@ -18,6 +18,7 @@ class Category(models.Model):
     @property
     def quantity(self):
         return self.product_set.count()
+    quantity.fget.short_description = "Quantidade"
 
     def __str__(self):
         return self.name

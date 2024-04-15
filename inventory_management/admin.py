@@ -23,7 +23,6 @@ admin.site.index_title = 'Gestão de Estoque'
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'quantity')
     search_fields = ('name',)
-    list_filter = ('name',)
 
 
 @admin.register(Product)
