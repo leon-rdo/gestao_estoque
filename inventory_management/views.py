@@ -37,8 +37,7 @@ class ProductDetailView(DetailView):
     template_name = 'product_detail.html'
 
 
-class ProductUnitDetailView(LoginRequiredMixin, DetailView):
-    login_url = '/admin/'
+class ProductUnitDetailView(DetailView):
     model = ProductUnit
     template_name = 'product_unit_detail.html'
 
