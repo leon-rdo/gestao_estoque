@@ -63,7 +63,7 @@ class ProductUnitDetailView(DetailView):
     def post(self, request, *args, **kwargs):
         destination_id = request.POST.get('destination')
         observations = request.POST.get('observations')
-
+        
         origin_id = self.get_object().location.id
         product_unit = self.get_object()
 
