@@ -107,6 +107,8 @@ class StockTransfer(models.Model):
             raise ValidationError("Origem e destino não podem ser iguais.")
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
+        if self.product_unit.location != self.origin:
+            raise ValidationError("A unidade de produto não está na origem.")
         
         self.product_unit.location = self.destination
         self.product_unit.save()
@@ -166,8 +168,9 @@ class Room(models.Model):
         super(Room, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.building.name} - Sala {self.name}'
+        return f'{self.building.name} - Sala {self.name} - Corredor {self.hall} - Prateleira {self.shelf}'
 
     class Meta:
         verbose_name_plural = "Salas"
         verbose_name = "Sala"
+        ordering = ['building', 'name']

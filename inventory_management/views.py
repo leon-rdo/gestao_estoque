@@ -2,6 +2,8 @@ from django.views.generic import TemplateView, ListView, DetailView
 from django.http import JsonResponse
 from django.views import View
 from .models import *
+from django.shortcuts import redirect
+from datetime import date
 
 
 class IndexView(TemplateView):
@@ -51,7 +53,36 @@ class ProductUnitDetailView(DetailView):
     model = ProductUnit
     template_name = 'product_unit_detail.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        room = Room.objects.all()
+        context['rooms'] = room.exclude(pk=self.get_object().location.id)
+        return context
+        
+        
+    def post(self, request, *args, **kwargs):
+        destination_id = request.POST.get('destination')
+        observations = request.POST.get('observations')
 
+        origin_id = self.get_object().location.id
+        product_unit = self.get_object()
+
+        origin = Room.objects.get(pk=origin_id)
+        destination = Room.objects.get(pk=destination_id)
+
+        transfer = StockTransfer.objects.create(
+            product_unit=product_unit,
+            origin=origin,
+            destination=destination,
+            transfer_date=date.today(),
+            observations=observations
+        )
+        
+        product_unit.location = destination
+        product_unit.save()
+
+        return redirect(product_unit.get_absolute_url())
+    
 class ScanQRView(TemplateView):
     template_name = 'scan_qr.html'
 
