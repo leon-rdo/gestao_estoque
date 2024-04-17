@@ -150,11 +150,13 @@ class Building(models.Model):
 class Room(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Sala", max_length=100)
+    hall = models.CharField("Corredor", max_length=100, default="N/A")
+    shelf = models.CharField("Prateleira", max_length=100, default="N/A")
     building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
     def full_address(self):
-        return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name}"
+        return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} - Corredor {self.hall} - Prateleira {self.shelf}"
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
