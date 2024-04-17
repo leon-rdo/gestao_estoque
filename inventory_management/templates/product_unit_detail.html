@@ -30,6 +30,18 @@
                     <td>{{ transfer.observations }}</td>
                 </tr>
                 {% endfor %}
+                {% if object.write_off %}
+                    <tr>
+                        <td>{{ object.modified }}</td>
+                        {% if object.stocktransfer_set.last.destination %}
+                            <td>{{ object.stocktransfer_set.last.destination }}</td>
+                        {% else %}
+                            <td>Sem transferências</td>
+                        {% endif %}
+                        <td>Baixa</td>
+                        <td> Baixa Realizada</td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>

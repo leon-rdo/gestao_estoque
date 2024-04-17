@@ -2,9 +2,7 @@ from django.db import models
 from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.text import slugify
-
-import uuid
-
+import uuid 
 
 class Category(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -67,6 +65,8 @@ class ProductUnit(models.Model):
     location = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Localização")
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
+    write_off = models.BooleanField("Baixado?", default=False)
+    modified = models.DateTimeField("Modificado", auto_now=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
@@ -88,6 +88,7 @@ class ProductUnit(models.Model):
     class Meta:
         verbose_name_plural = "Unidades de Produto"
         verbose_name = "Unidade de Produto"
+        ordering = ['write_off', 'purchase_date', 'product']
 
     def get_absolute_url(self):
         return reverse('inventory_management:product_unit_detail', kwargs={'category_slug':self.product.category.slug, 'product_slug':self.product.slug, 'slug': self.slug})
@@ -104,6 +105,8 @@ class StockTransfer(models.Model):
     def save(self, *args, **kwargs):
         if self.origin == self.destination:
             raise ValidationError("Origem e destino não podem ser iguais.")
+        if self.product_unit.write_off:
+            raise ValidationError("A unidade de produto foi baixada.")
         
         self.product_unit.location = self.destination
         self.product_unit.save()

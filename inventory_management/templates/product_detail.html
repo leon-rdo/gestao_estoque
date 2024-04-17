@@ -29,15 +29,15 @@
                 </tr>
             </thead>
             <tbody>
-                {% for item in object.productunit_set.all %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'inventory_management:product_unit_detail' item.product.category.slug item.product.slug item.slug %}">
-                                {{ item.product.name }} - {{ item.slug }}
-                            </a>
-                        </td>
-                        <td>{{ item.location.building.name }} - {{ item.location.full_address }}</td>
-                    </tr>
+                {% for item in product_units %}
+                <tr>
+                    <td>
+                        <a href="{% url 'inventory_management:product_unit_detail' item.product.category.slug item.product.slug item.slug %}">
+                            {{ item.product.name }} - {{ item.slug }}
+                        </a>
+                    </td>
+                    <td>{{ item.location.building.name }} - {{ item.location.full_address }}</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -63,4 +63,16 @@
     </div>
 </div>
 {% endif %}
+
+<form id="filter_form" method="GET" action="">
+    <label for="write_off" class="form-label">Filtrar por Baixa</label>
+    <select name="write_off" class="form-select">
+        <option value="false">Não Baixados</option>
+        <option value="true">Baixados</option>
+        <option value="todos">Todos</option>
+    </select>
+    <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
+</form>
+
 {% endblock %}
+

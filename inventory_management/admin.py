@@ -1,6 +1,7 @@
 import os
 import tempfile
 import zipfile
+from django.db.models.query import QuerySet
 import qrcode
 from django import forms
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -88,9 +89,9 @@ download_qr_codes.short_description = "Baixar QR Codes"
 
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'location', 'purchase_date')
+    list_display = ('product', 'location', 'purchase_date', 'write_off')
     search_fields = ('product__name', 'location__name')
-    list_filter = ('product' ,'purchase_date', 'location')
+    list_filter = ('product' ,'purchase_date', 'location', 'write_off')
     actions = [download_qr_codes]
 
     def get_form(self, request, obj=None, **kwargs):

@@ -1,7 +1,6 @@
 from django.views.generic import TemplateView, ListView, DetailView
 from django.http import JsonResponse
 from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import *
 
 
@@ -35,7 +34,18 @@ class ProductListView(ListView):
 class ProductDetailView(DetailView):
     model = Product
     template_name = 'product_detail.html'
+   
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        product = self.get_object()
 
+        if self.request.GET.get('write_off') == 'true':
+            context['product_units'] = product.productunit_set.filter(write_off=True)
+        elif self.request.GET.get('write_off') == 'todos':
+            context['product_units'] = product.productunit_set.all()
+        else:
+            context['product_units'] = product.productunit_set.filter(write_off=False)
+        return context
 
 class ProductUnitDetailView(DetailView):
     model = ProductUnit
