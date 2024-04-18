@@ -160,6 +160,7 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Bem-vindo ao painel de administração",
     "site_header": "Administração",
     "hide_models": ["inventory_management.room"],
+    "show_ui_builder": True,
     "topmenu_links": [
 
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
@@ -179,6 +180,40 @@ JAZZMIN_SETTINGS = {
         "inventory_management.stocktransfer": "fas fa-exchange-alt",
         "inventory_management.productunit": "fas fa-cube",
         "inventory_management.building": "fas fa-building",
+        "inventory_management.hall": "fas fa-door-open",
+        "inventory_management.shelf": "fas fa-box",
     },
+    "order_with_respect_to": ["inventory_management", "auth"],
+}
 
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": False,
+    "accent": "accent-primary",
+    "navbar": "navbar-white navbar-light",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": True,
+    "theme": "pulse",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
 }
