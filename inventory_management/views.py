@@ -55,44 +55,34 @@ class ProductUnitDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        room = Room.objects.all()
-        context['rooms'] = room.exclude(pk=self.get_object().location.id)
+        context['rooms'] = Room.objects.exclude(pk=self.get_object().location.id)
         return context
         
     def post(self, request, *args, **kwargs):
-        write_off = request.POST.get('write_off')
-        if write_off:
-            product_unit = self.get_object()
-            product_unit.write_off = True
-            product_unit.save()
-            return redirect(product_unit.get_absolute_url())
-        back_to_stock = request.POST.get('back_to_stock')
-        if back_to_stock == 'True':
-            product_unit = self.get_object()
-            product_unit.write_off = False
-            product_unit.save()
-            return redirect(product_unit.get_absolute_url())
-
-        destination_id = request.POST.get('destination')
-        observations = request.POST.get('observations')
-        
-        origin_id = self.get_object().location.id
         product_unit = self.get_object()
 
-        origin = Room.objects.get(pk=origin_id)
-        destination = Room.objects.get(pk=destination_id)
+        if 'write_off' in request.POST:
+            product_unit.write_off = True
+        elif request.POST.get('back_to_stock') == 'True':
+            product_unit.write_off = False
+        else:
+            destination_id = request.POST.get('destination')
+            observations = request.POST.get('observations')
+            
+            origin = product_unit.location
+            destination = Room.objects.get(pk=destination_id)
+            
+            StockTransfer.objects.create(
+                product_unit=product_unit,
+                origin=origin,
+                destination=destination,
+                transfer_date=date.today(),
+                observations=observations
+            )
+            
+            product_unit.location = destination
 
-        transfer = StockTransfer.objects.create(
-            product_unit=product_unit,
-            origin=origin,
-            destination=destination,
-            transfer_date=date.today(),
-            observations=observations
-        )
-        
-        product_unit.location = destination
         product_unit.save()
-
         return redirect(product_unit.get_absolute_url())
     
 class ScanQRView(TemplateView):
