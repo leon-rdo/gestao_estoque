@@ -59,8 +59,20 @@ class ProductUnitDetailView(DetailView):
         context['rooms'] = room.exclude(pk=self.get_object().location.id)
         return context
         
-        
     def post(self, request, *args, **kwargs):
+        write_off = request.POST.get('write_off')
+        if write_off:
+            product_unit = self.get_object()
+            product_unit.write_off = True
+            product_unit.save()
+            return redirect(product_unit.get_absolute_url())
+        back_to_stock = request.POST.get('back_to_stock')
+        if back_to_stock == 'True':
+            product_unit = self.get_object()
+            product_unit.write_off = False
+            product_unit.save()
+            return redirect(product_unit.get_absolute_url())
+
         destination_id = request.POST.get('destination')
         observations = request.POST.get('observations')
         
