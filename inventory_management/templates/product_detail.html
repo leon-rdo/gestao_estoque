@@ -36,7 +36,11 @@
                             {{ item.product.name }} - {{ item.slug }}
                         </a>
                     </td>
-                    <td>{{ item.location.building.name }} - {{ item.location.full_address }}</td>
+                    {% if item.write_off %}
+                        <td>Baixado</td>
+                    {% else %}
+                        <td>{{ item.location.building.name }} - {{ item.location.full_address }}</td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -68,7 +72,7 @@
     <label for="write_off" class="form-label">Filtrar por Baixa</label>
     <select name="write_off" class="form-select">
         <option value="false">Não Baixados</option>
-        <option value="true">Baixados</option>
+        <option value="baixados">Baixados</option>
         <option value="todos">Todos</option>
     </select>
     <button type="submit" class="btn btn-primary mt-2">Filtrar</button>

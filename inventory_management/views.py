@@ -41,7 +41,7 @@ class ProductDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
 
-        if self.request.GET.get('write_off') == 'true':
+        if self.request.GET.get('write_off') == 'baixados':
             context['product_units'] = product.productunit_set.filter(write_off=True)
         elif self.request.GET.get('write_off') == 'todos':
             context['product_units'] = product.productunit_set.all()
