@@ -118,15 +118,16 @@ class GetProductLocationView(View):
         product_unit = ProductUnit.objects.get(slug=self.kwargs.get('slug'))
         return JsonResponse({'location': str(product_unit.location.slug)})
     
-def calculate_items_per_page(page_width, page_height, qr_size):
+def calculate_items_per_page(page_width, page_height, qr_size, columns):
     available_width = page_width - 100  # Ajuste conforme necessário
-    available_height = page_height - 200  # Ajuste conforme necessário
+    available_height = page_height - 100  # Ajuste conforme necessário
 
+    max_columns = columns
     max_rows = available_height // (qr_size + 20)
-    max_columns = available_width // (qr_size + 20)
+    items_per_page = max_rows * max_columns
 
-    return max_rows * max_columns
-# views.py
+    return items_per_page
+
 def generate_qr_codes(request):
     if request.method == 'POST':
         form = QRCodeForm(request.POST)
@@ -150,21 +151,32 @@ def generate_qr_codes(request):
                 buffer = BytesIO()
                 c = canvas.Canvas(buffer, pagesize=letter)
 
-
                 x_offset = 50
                 qr_size = get_qr_size(size_preset)  # Tamanho do código QR em pixels
                 page_width, page_height = letter
-                items_per_page = calculate_items_per_page(page_width, page_height, qr_size)
+                if size_preset == 'pequeno':
+                    columns = 4
+                elif size_preset == 'medio':
+                    columns = 3
+                elif size_preset == 'grande':
+                    columns = 2
+
+                items_per_page = calculate_items_per_page(page_width, page_height, qr_size, columns)
 
                 for idx, qr in enumerate(qr_codes):
-                    row = idx // 3  # Linha dentro da página
-                    col = idx % 3  # Coluna dentro da página
+                    row = idx // columns  # Linha dentro da página
+                    col = idx % columns  # Coluna dentro da página
                     page_idx = idx // items_per_page  # Índice da página atual
-                    y_coordinate = page_height - 150 - (row % (items_per_page // 3)) * (qr_size + 20)
+                    if size_preset == 'pequeno':
+                        y_coordinate = page_height - 150 - (row % (items_per_page // columns)) * (qr_size + 20)
+                    elif size_preset == 'medio':
+                        y_coordinate = page_height - 150 - (row % (items_per_page // columns)) * (qr_size + 20)
+                    elif size_preset == 'grande':
+                        y_coordinate = page_height - 200 - (row % (items_per_page // columns)) * (qr_size + 20)
                     x_coordinate = x_offset + col * (qr_size + 20)
                     if page_idx > 0:
                         # Ajustar y_coordinate para a segunda página em diante
-                        y_coordinate -= (page_idx * (page_height - 650))
+                        y_coordinate -= (page_height - 750)  # Ajuste conforme necessário
 
                     c.drawInlineImage(qr, x_coordinate, y_coordinate, width=qr_size, height=qr_size)
 
@@ -186,9 +198,9 @@ def generate_qr_codes(request):
 
 def get_qr_size(size_preset):
     if size_preset == 'pequeno':
-        return 50  # Ajuste o valor conforme necessário
+        return 100  # Ajuste o valor conforme necessário
     elif size_preset == 'medio':
-        return 70  # Ajuste o valor conforme necessário
-    elif size_preset == 'grande':
         return 150  # Ajuste o valor conforme necessário
+    elif size_preset == 'grande':
+        return 200  # Ajuste o valor conforme necessário
 
