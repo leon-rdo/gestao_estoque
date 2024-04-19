@@ -1,0 +1,18 @@
+{% extends "admin/base.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Adicione qualquer estilo personalizado aqui, se necessário */
+</style>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+<h1>Generate QR Codes</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Generate QR Codes">
+</form>
+{% endblock %}
