@@ -161,14 +161,28 @@ JAZZMIN_SETTINGS = {
     "site_header": "Administração",
     "hide_models": ["inventory_management.room"],
     "show_ui_builder": True,
+    "changeform_format": "single",
     "topmenu_links": [
-
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Categorias", "url": "admin:inventory_management_category_changelist", "permissions": ["inventory_management.view_category"]},
         {"name": "Produtos", "url": "admin:inventory_management_product_changelist", "permissions": ["inventory_management.view_product"]},
         {"name": "Unidades de Produto", "url": "admin:inventory_management_productunit_changelist", "permissions": ["inventory_management.view_productunit"]},
         {"name": "Transferências", "url": "admin:inventory_management_stockTransfer_changelist", "permissions": ["inventory_management.view_stockTransfer"]},
         {"name": "Voltar para o site", "url": "/"},
+    ],
+    
+    "order_with_respect_to": [
+        "inventory_management",
+        "inventory_management.category",
+        "inventory_management.product",
+        "inventory_management.productunit",
+        "inventory_management.stocktransfer",
+        "inventory_management.building",
+        "inventory_management.hall",
+        "inventory_management.shelf",
+        "auth",
+        "auth.user",
+        "auth.group"
     ],
     "icons": {
         "auth": "fas fa-users-cog",
@@ -183,7 +197,6 @@ JAZZMIN_SETTINGS = {
         "inventory_management.hall": "fas fa-door-open",
         "inventory_management.shelf": "fas fa-box",
     },
-    "order_with_respect_to": ["inventory_management", "auth"],
 }
 
 JAZZMIN_UI_TWEAKS = {
