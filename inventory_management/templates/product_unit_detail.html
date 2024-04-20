@@ -2,109 +2,124 @@
 
 {% block content %}
 {% if user.is_authenticated %}
-<div class="row justify-content-center align-items-center g-2 pt-3">
-    <div class="col-12">
-        <h1>{{ object.product }}</h1>
-        <span>
-            <i class="bi bi-geo-alt-fill"></i>
-            Localização atual: <address><strong>{{ object.location.building.name }}</strong> - {{ object.location.full_address }}</address>
-        </span>
-    </div>
-    <div class="col-12">
-        <h2>Movimentações</h2>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">Data</th>
-                    <th scope="col">Origem</th>
-                    <th scope="col">Destino</th>
-                    <th scope="col">Observações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for transfer in object.stocktransfer_set.all %}
-                <tr>
-                    <td>{{ transfer.transfer_date }}</td>
-                    <td>{{ transfer.origin }}</td>
-                    <td>{{ transfer.destination }}</td>
-                    <td>{{ transfer.observations }}</td>
-                </tr>
-                {% endfor %}
-                {% if object.write_off %}
+<div class="container pt-5">
+    <div class="row justify-content-center align-items-center">
+        <div class="col-12">
+            <h1 class="mb-4">{{ object.product }}</h1>
+            <p class="mb-4">
+                <i class="bi bi-geo-alt-fill"></i>
+                <strong>Localização atual:</strong> {{ object.location.building.name }} - {{ object.location.full_address }}
+            </p>
+        </div>
+        <div class="col-12">
+            <h2 class="mb-3">Movimentações</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Data</th>
+                        <th scope="col">Origem</th>
+                        <th scope="col">Destino</th>
+                        <th scope="col">Observações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transfer in object.stocktransfer_set.all %}
+                    <tr>
+                        <td>{{ transfer.transfer_date }}</td>
+                        <td>{{ transfer.origin }}</td>
+                        <td>{{ transfer.destination }}</td>
+                        <td>{{ transfer.observations }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if object.write_off %}
                     <tr>
                         <td>{{ object.modified }}</td>
-                        <td>{{ object.location.building }}</td>
+                        <td>{{ object.location }}</td>
                         <td>Baixa</td>
                         <td>Baixa Realizada</td>
                     </tr>
-                {% endif %}
-            </tbody>
-        </table>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
-<div class="row justify-content-center align-items-center g-2">
-    <div id="qrcode" class="col-12 col-md-6 d-flex justify-content-center my-3"></div>
-</div>
-<div class="container mt-3 d-flex align-items-center flex-column">
-    <div class="col-12 col-md-6 d-flex justify-content-center">
-        {% if object.write_off %}
-        <form id="back_to_stock_form" method="post" action="">
-            {% csrf_token %}
-            <input type="hidden" name="back_to_stock" value="True">
-            <button type="submit" class="btn btn-success">Voltar para estoque</button>
-        </form>
-        {% else %}
-        <form id="write_off_form" method="post" action="">
-            {% csrf_token %}
-            <input type="hidden" name="write_off" value="True">
-            <button type="submit" class="btn btn-danger">Dar baixa</button>
-        </form>
-        {% endif %}
+
+    {% if object.write_off %}
+    <div class="row justify-content-center align-items-center mt-4">
+        <div class="col-12 col-md-6 d-flex justify-content-center">
+            <form id="back_to_stock_form" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="back_to_stock" value="True">
+                <button type="submit" class="btn btn-success"><i class="bi bi-box-arrow-up"></i> Voltar para estoque</button>
+            </form>
+        </div>
     </div>
-    <div class="row justify-content-center align-items-center g-2">
-        <div class="col-12 col-md-10 d-flex justify-content-center my-3">
+    {% else %}
+    <div class="row justify-content-center align-items-center mt-4">
+        <div class="col-12 col-md-6 d-flex justify-content-center">
+            <form id="write_off_form" method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="write_off" value="True">
+                <button type="submit" class="btn btn-danger"><i class="bi bi-archive"></i> Dar baixa</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row justify-content-center align-items-center mt-4">
+        <div id="qrcode" class="col-12 col-md-6 d-flex justify-content-center my-3"></div>
+    </div>
+
+    {% if not object.write_off %}
+    <div class="row justify-content-center align-items-center mt-4">
+        <div class="col-12 col-md-10">
             <form method="post">
                 {% csrf_token %}
-                <div class="mb-3 text-center">
-                    <label for="destination">Destino:</label>
+                <div class="mb-3">
+                    <label for="destination" class="form-label">Destino:</label>
                     <select name="destination" id="destination" class="form-select">
                         {% for room in rooms %}
-                            <option value="{{ room.id }}">{{ room }}</option>
+                        <option value="{{ room.id }}">{{ room }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="mb-3 text-center">
-                    <label for="observations">Observações:</label>
+                <div class="mb-3">
+                    <label for="observations" class="form-label">Observações:</label>
                     <textarea name="observations" id="observations" class="form-control"></textarea>
                 </div>
-                <div class="d-flex justify-content-center">
-                    <button type="submit" class="btn btn-primary">Transferir</button>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-right"></i> Transferir</button>
                 </div>
             </form>
         </div>
     </div>
+    {% endif %}
 </div>
 
 {% else %}
-<div class="row justify-content-center align-items-center g-2 pb-3">
-    <div class="col-12 col-md-6">
-        <h1>{{ object.product }}</h1>
-        <span>
-            <i class="bi bi-geo-alt-fill"></i>
-            Localização do produto: <address><strong>{{ object.location.building.name }}</strong> - {{ object.location.full_address }}</address>
-        </span>
+<div class="container pb-5">
+    <div class="row justify-content-center align-items-center">
+        <div class="col-12 col-md-6">
+            <h1 class="mb-4">{{ object.product }}</h1>
+            <p class="mb-4">
+                <i class="bi bi-geo-alt-fill"></i>
+                <strong>Localização do produto:</strong> {{ object.location.building.name }} - {{ object.location.full_address }}
+            </p>
+        </div>
+        {% if object.product.image %}
+        <div class="col-12 col-md-6">
+            <img src="{{ object.product.image.url }}" alt="{{ object.product.name }}" class="img-fluid">
+            <figcaption class="figure-caption text-center">
+                <h2>Preço</h2>
+                <p class="h5">R$ {{ object.product.price }}</p>
+            </figcaption>
+        </div>
+        {% endif %}
     </div>
-    {% if object.product.image %}            
-    <figure class="col-12 col-md-6">
-        <img src="{{ object.product.image.url }}" alt="{{ object.product.name }}" class="img-fluid">
-        <figcaption class="figure-caption text-center">
-            <h2>Preço</h2>
-            <p class="h5">R$ {{ object.product.price }}</p>
-        </figcaption>
-    </figure>
-    {% endif %}
-    <div class="col-12 fs-5">
-        {{ object.product.description|linebreaks }}
+    <div class="row justify-content-center align-items-center mt-4">
+        <div class="col-12 fs-5">
+            {{ object.product.description|linebreaks }}
+        </div>
     </div>
 </div>
 {% endif %}
@@ -117,9 +132,9 @@
         text: window.location.href,
         width: 256,
         height: 256,
-        colorDark : "#000000",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
     });
 </script>
 {% endblock extra_scripts %}
