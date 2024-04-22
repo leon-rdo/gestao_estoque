@@ -4,6 +4,13 @@ from django.views import View
 from .models import *
 from django.shortcuts import redirect
 from datetime import date
+from .forms import QRCodeForm
+from django.http import HttpResponse
+import qrcode
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from django.shortcuts import render
+from io import BytesIO
 
 
 class IndexView(TemplateView):
@@ -108,3 +115,91 @@ class GetProductLocationView(View):
     def get(self, request, *args, **kwargs):
         product_unit = ProductUnit.objects.get(slug=self.kwargs.get('slug'))
         return JsonResponse({'location': str(product_unit.location.slug)})
+    
+def calculate_items_per_page(page_width, page_height, qr_size, columns):
+    available_width = page_width - 100  # Ajuste conforme necessário
+    available_height = page_height - 100  # Ajuste conforme necessário
+
+    max_columns = columns
+    max_rows = available_height // (qr_size + 20)
+    items_per_page = max_rows * max_columns
+
+    return items_per_page
+
+def generate_qr_codes(request):
+    host = request.get_host()
+    if request.method == 'POST':
+        form = QRCodeForm(request.POST)
+        if form.is_valid():
+            selected_items = request.GET.get('selected_items')
+            size_preset = form.cleaned_data['size_preset']
+            
+            if selected_items and size_preset:
+                selected_item_ids = selected_items.split(',')
+                queryset = ProductUnit.objects.filter(id__in=selected_item_ids)
+
+                qr_codes = []
+                for item in queryset:
+                    data = f"http://{host}{item.get_absolute_url()}"
+                    qr = qrcode.make(data, box_size=get_qr_size(size_preset))
+                    qr_codes.append(qr)
+
+                # Gerar PDF com os códigos QR
+                response = HttpResponse(content_type='application/pdf')
+                response['Content-Disposition'] = 'attachment; filename="qr_codes.pdf"'
+                buffer = BytesIO()
+                c = canvas.Canvas(buffer, pagesize=letter)
+
+                x_offset = 50
+                qr_size = get_qr_size(size_preset)  # Tamanho do código QR em pixels
+                page_width, page_height = letter
+                if size_preset == 'pequeno':
+                    columns = 4
+                elif size_preset == 'medio':
+                    columns = 3
+                elif size_preset == 'grande':
+                    columns = 2
+
+                items_per_page = calculate_items_per_page(page_width, page_height, qr_size, columns)
+
+                for idx, qr in enumerate(qr_codes):
+                    row = idx // columns  # Linha dentro da página
+                    col = idx % columns  # Coluna dentro da página
+                    page_idx = idx // items_per_page  # Índice da página atual
+                   
+                    if size_preset == 'pequeno':
+                        y_coordinate = page_height - 200 - (row % (items_per_page // columns)) * (qr_size + 20)
+                        x_coordinate = 27 + x_offset + col * (qr_size + 20)
+                    elif size_preset == 'medio':
+                        y_coordinate = page_height - 200- (row % (items_per_page // columns)) * (qr_size + 20)
+                        x_coordinate = 13 + x_offset + col * (qr_size + 20)
+                    elif size_preset == 'grande':
+                        y_coordinate = page_height - 250 - (row % (items_per_page // columns)) * (qr_size + 20)
+                        x_coordinate = 50 + x_offset + col * (qr_size + 20)
+
+                    # Verificar se é necessário iniciar uma nova página
+                    if idx > 0 and idx % items_per_page == 0:
+                        c.showPage()
+
+                    c.drawInlineImage(qr, x_coordinate, y_coordinate, width=qr_size, height=qr_size)
+
+                c.showPage()  # Garantir que a última página seja exibida
+
+                c.save()
+                pdf_data = buffer.getvalue()
+                buffer.close()
+                response.write(pdf_data)
+
+                return response
+    else:
+        form = QRCodeForm()
+    return render(request, 'admin/inventory_management/productunit/generate_qr_codes.html', {'form': form})
+
+def get_qr_size(size_preset):
+    if size_preset == 'pequeno':
+        return 100  # Ajuste o valor conforme necessário
+    elif size_preset == 'medio':
+        return 150  # Ajuste o valor conforme necessário
+    elif size_preset == 'grande':
+        return 200  # Ajuste o valor conforme necessário
+

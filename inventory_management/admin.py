@@ -1,17 +1,10 @@
-import os
-import tempfile
-import zipfile
-from django.db.models.query import QuerySet
-import qrcode
 from django import forms
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.utils.text import slugify
-from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-# from requests import request
+from django.urls import path
+
+from django.shortcuts import redirect
+#
 
 from django.contrib import admin
 from .models import *
@@ -32,60 +25,15 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('category',)
     
-def generate_qr_codes_to_pdf(queryset, file_path, request):
-    c = canvas.Canvas(file_path, pagesize=letter)
-
-    page_width, page_height = letter
-    host = request.get_host()
-
-    for product_unit in queryset:
-        # Construir a URL absoluta do item
-        absolute_url = f"http://{host}{product_unit.get_absolute_url()}"
-        
-        # Gerar QR code para a URL
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(absolute_url)
-        qr.make(fit=True)
-        qr_img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Salvar a imagem do QR code em um arquivo temporário
-        qr_img_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        qr_img.save(qr_img_temp_file)
-
-        # Determinar a posição central do QR code na página
-        qr_width, qr_height = qr_img.size
-        x_coordinate = (page_width - qr_width) / 2
-        y_coordinate = (page_height - qr_height) / 2
-        
-        # Adicionar o QR code ao PDF
-        c.drawImage(qr_img_temp_file.name, x_coordinate, y_coordinate, width=qr_width, height=qr_height)
-        
-        # Fechar e excluir o arquivo temporário
-        qr_img_temp_file.close()
-
-        # Adicionar uma nova página para o próximo QR code
-        c.showPage()
-
-    c.save()
 
 def download_qr_codes(modeladmin, request, queryset):
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    generate_qr_codes_to_pdf(queryset, temp_file.name, request)
-
-    with open(temp_file.name, 'rb') as f:
-        response = HttpResponse(f.read(), content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="qr_codes.pdf"'
-
-    temp_file.close()
-
-    return response
+    item_ids = ','.join(str(item.id) for item in queryset)
+    url = reverse('inventory_management:generate_qr_codes') + f'?selected_items={item_ids}'
+    return redirect(url)
+    
 
 download_qr_codes.short_description = "Baixar QR Codes"
+
 
 def write_off_products(modeladmin, request, queryset):
     for product_unit in queryset:
@@ -119,6 +67,30 @@ class ProductUnitAdmin(admin.ModelAdmin):
             return self.readonly_fields + ('location',)
         return self.readonly_fields
 
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path('customize_qr_codes/', self.customize_qr_codes),
+        ]
+        return my_urls + urls
+
+    def customize_qr_codes(self, request):
+        return download_qr_codes(self, request, None)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['show_custom_qr_button'] = True
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['show_custom_qr_button'] = True
+        return super().add_view(request, form_url, extra_context=extra_context)
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['show_custom_qr_button'] = True
+        return super().changelist_view(request, extra_context=extra_context)
 
 @admin.register(StockTransfer)
 class StockTransferAdmin(admin.ModelAdmin):
