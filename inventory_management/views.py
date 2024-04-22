@@ -11,10 +11,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from django.shortcuts import render
 from io import BytesIO
-from reportlab.platypus import SimpleDocTemplate, Image, Spacer
-from reportlab.lib.units import inch
-import os
-import tempfile
 
 
 class IndexView(TemplateView):
@@ -129,6 +125,7 @@ def calculate_items_per_page(page_width, page_height, qr_size, columns):
     return items_per_page
 
 def generate_qr_codes(request):
+    host = request.get_host()
     if request.method == 'POST':
         form = QRCodeForm(request.POST)
         if form.is_valid():
@@ -141,7 +138,7 @@ def generate_qr_codes(request):
 
                 qr_codes = []
                 for item in queryset:
-                    data = f"Tamanho: {size_preset}, Item: {item.id}"
+                    data = f"http://{host}{item.get_absolute_url()}"
                     qr = qrcode.make(data, box_size=get_qr_size(size_preset))
                     qr_codes.append(qr)
 
@@ -167,22 +164,22 @@ def generate_qr_codes(request):
                     row = idx // columns  # Linha dentro da página
                     col = idx % columns  # Coluna dentro da página
                     page_idx = idx // items_per_page  # Índice da página atual
+                   
                     if size_preset == 'pequeno':
-                        y_coordinate = page_height - 150 - (row % (items_per_page // columns)) * (qr_size + 20)
-                    elif size_preset == 'medio':
-                        y_coordinate = page_height - 150 - (row % (items_per_page // columns)) * (qr_size + 20)
-                    elif size_preset == 'grande':
                         y_coordinate = page_height - 200 - (row % (items_per_page // columns)) * (qr_size + 20)
-                    x_coordinate = x_offset + col * (qr_size + 20)
-                    if page_idx > 0:
-                        # Ajustar y_coordinate para a segunda página em diante
-                        y_coordinate -= (page_height - 750)  # Ajuste conforme necessário
+                        x_coordinate = 27 + x_offset + col * (qr_size + 20)
+                    elif size_preset == 'medio':
+                        y_coordinate = page_height - 200- (row % (items_per_page // columns)) * (qr_size + 20)
+                        x_coordinate = 13 + x_offset + col * (qr_size + 20)
+                    elif size_preset == 'grande':
+                        y_coordinate = page_height - 250 - (row % (items_per_page // columns)) * (qr_size + 20)
+                        x_coordinate = 50 + x_offset + col * (qr_size + 20)
+
+                    # Verificar se é necessário iniciar uma nova página
+                    if idx > 0 and idx % items_per_page == 0:
+                        c.showPage()
 
                     c.drawInlineImage(qr, x_coordinate, y_coordinate, width=qr_size, height=qr_size)
-
-                    if (idx + 1) % items_per_page == 0 and idx != 0:
-                        # Iniciar nova página após renderizar todos os QR codes da página atual
-                        c.showPage()
 
                 c.showPage()  # Garantir que a última página seja exibida
 
