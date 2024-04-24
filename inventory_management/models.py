@@ -62,7 +62,7 @@ class Product(models.Model):
 class ProductUnit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
-    location = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Localização")
+    location = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Localização")
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
     write_off = models.BooleanField("Baixado?", default=False)
@@ -97,8 +97,8 @@ class ProductUnit(models.Model):
 class StockTransfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
-    origin = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
-    destination = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
+    origin = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
+    destination = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
     transfer_date = models.DateField("Data da Transferência")
     observations = models.TextField("Observações", blank=True, null=True)
 
@@ -156,18 +156,17 @@ class Room(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Sala", max_length=100)
     building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
-    hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
     def full_address(self):
-        return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} - {self.hall} "
+        return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} "
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
         super(Room, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.building.name} - Sala {self.name} - {self.hall}'
+        return f'{self.building.name} - Sala {self.name}'
 
     class Meta:
         verbose_name_plural = "Salas"
@@ -177,7 +176,7 @@ class Room(models.Model):
 class Hall (models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome do Corredor", max_length=100)
-    shelf = models.ForeignKey('inventory_management.Shelf',blank=True, null=True, on_delete=models.CASCADE, verbose_name="Prateleira")
+    room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
@@ -185,7 +184,7 @@ class Hall (models.Model):
         super(Hall, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'Corredor {self.name} - {self.shelf}'
+        return f'{self.room} - Corredor {self.name}'
 
     class Meta:
         verbose_name_plural = "Corredores"
@@ -195,6 +194,7 @@ class Hall (models.Model):
 class Shelf (models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Prateleira", max_length=100)
+    hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
@@ -202,7 +202,7 @@ class Shelf (models.Model):
         super(Shelf, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'Prateleira {self.name}'
+        return f' {self.hall} - Prateleira {self.name}'
 
     class Meta:
         verbose_name_plural = "Prateleiras"

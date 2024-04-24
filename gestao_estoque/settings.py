@@ -160,7 +160,6 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Bem-vindo ao painel de administração",
     "site_header": "Administração",
     "hide_models": ["inventory_management.room"],
-    "show_ui_builder": True,
     "changeform_format": "single",
     "topmenu_links": [
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
@@ -219,7 +218,7 @@ JAZZMIN_UI_TWEAKS = {
     "sidebar_nav_compact_style": False,
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": True,
-    "theme": "pulse",
+    # "theme": "pulse",
     "dark_mode_theme": None,
     "button_classes": {
         "primary": "btn-primary",
