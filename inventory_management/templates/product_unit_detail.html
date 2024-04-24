@@ -11,6 +11,7 @@
                 <strong>Localização atual:</strong> {{ object.location.building.name }} - {{ object.location.full_address }}
             </p>
         </div>
+    {% if object.stocktransfer_set.all or object.write_off %}
         <div class="col-12">
             <h2 class="mb-3">Movimentações</h2>
             <table class="table table-striped">
@@ -43,6 +44,7 @@
             </table>
         </div>
     </div>
+    {% endif %}
 
     {% if object.write_off %}
     <div class="row justify-content-center align-items-center mt-4">
