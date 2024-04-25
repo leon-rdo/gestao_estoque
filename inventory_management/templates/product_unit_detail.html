@@ -8,7 +8,7 @@
             <h1 class="mb-4">{{ object.product }}</h1>
             <p class="mb-4">
                 <i class="bi bi-geo-alt-fill"></i>
-                <strong>Localização atual:</strong> {{ object.location.building.name }} - {{ object.location.full_address }}
+                <strong>Localização atual:</strong> {{ object.location.full_adress }}
             </p>
         </div>
     {% if object.stocktransfer_set.all or object.write_off %}

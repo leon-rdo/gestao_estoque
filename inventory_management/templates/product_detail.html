@@ -39,13 +39,14 @@
                     {% if item.write_off %}
                         <td>Baixado</td>
                     {% else %}
-                        <td>{{ item.location.building.name }} - {{ item.location.full_address }}</td>
+                        <td>{{ item.location.full_adress }}</td>
                     {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    <h4 class="d-flex justify-content-center"><strong>Total em metros:</strong>{{total_meters}}</h4>
     {% endif %}
 </div>
 {% else %}

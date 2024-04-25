@@ -39,6 +39,7 @@ class ProductListView(ListView):
     template_name = 'product_list.html'
     context_object_name = 'products'
 
+from django.db.models import Sum
 
 class ProductDetailView(DetailView):
     model = Product
@@ -47,13 +48,21 @@ class ProductDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
-
-        if self.request.GET.get('write_off') == 'baixados':
-            context['product_units'] = product.productunit_set.filter(write_off=True)
-        elif self.request.GET.get('write_off') == 'todos':
-            context['product_units'] = product.productunit_set.all()
+        
+        write_off = self.request.GET.get('write_off')
+        product_units = product.productunit_set.all() 
+        if write_off == 'baixados':
+            product_units = product_units.filter(write_off=True)
+        elif write_off == 'todos':
+            pass 
         else:
-            context['product_units'] = product.productunit_set.filter(write_off=False)
+            product_units = product_units.filter(write_off=False)
+        
+        total_meters = product_units.aggregate(total_meters=Sum('meters'))['total_meters']
+        context['total_meters'] = total_meters if total_meters else 0
+        
+        context['product_units'] = product_units 
+            
         return context
 
 class ProductUnitDetailView(DetailView):
