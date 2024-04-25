@@ -51,7 +51,7 @@ write_on_products.short_description = "Retornar ao estoque os produtos seleciona
 
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'location', 'purchase_date', 'write_off')
+    list_display = ('product', 'location', 'meters' ,'purchase_date', 'write_off')
     search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
     actions = [download_qr_codes, write_off_products, write_on_products]

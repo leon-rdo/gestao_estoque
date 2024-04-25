@@ -65,6 +65,8 @@ class ProductUnit(models.Model):
     location = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Localização")
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
+    meters = models.DecimalField("Metros", max_digits=10, decimal_places=2, null=False, blank=False)
+    ncm = models.CharField("NCM", max_length=8, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
     modified = models.DateTimeField("Modificado", auto_now=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
@@ -73,7 +75,7 @@ class ProductUnit(models.Model):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
         for i in range(1, self.quantity):
-            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date,)
+            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, meters=self.meters, ncm=self.ncm)
 
         self.__class__.objects.filter(id=self.id).update(quantity=1)
 
@@ -137,7 +139,7 @@ class Building(models.Model):
     state = models.CharField("Estado (UF)", max_length=2)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
-    def full_address(self):
+    def address(self):
         return f"{self.street}, {self.number} - {self.neighborhood}, {self.city} - {self.state}, {self.cep}"
 
     def save(self, *args, **kwargs):
@@ -158,7 +160,7 @@ class Room(models.Model):
     building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
-    def full_address(self):
+    def address(self):
         return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} "
 
     def save(self, *args, **kwargs):
@@ -201,6 +203,9 @@ class Shelf (models.Model):
         self.slug = slugify(self.id)
         super(Shelf, self).save(*args, **kwargs)
 
+    def full_adress(self):
+        return f'{self.hall.room.building.address()} - Sala {self.hall.room.name} - Corredor {self.hall.name} - Prateleira {self.name}'
+    
     def __str__(self):
         return f' {self.hall} - Prateleira {self.name}'
 
