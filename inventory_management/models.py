@@ -71,6 +71,7 @@ class ProductUnit(models.Model):
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
     meters = models.DecimalField("Metros", max_digits=10, decimal_places=2, null=False, blank=False)
+    code = models.CharField("Código", max_length=255, null=True, blank=True)
     ncm = models.CharField("NCM", max_length=8, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
     type = models.CharField("Tipo", max_length=10, choices=TYPE_CHOICES, default='none')
