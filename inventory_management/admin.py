@@ -58,8 +58,15 @@ class ProductUnitAdmin(admin.ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        if obj:
+        if obj and obj.type == 'liso':
+            form.base_fields['pattern'].widget = forms.HiddenInput()
             form.base_fields['quantity'].widget = forms.HiddenInput()
+        elif obj and obj.type == 'estampado':
+            form.base_fields['color'].widget = forms.HiddenInput()
+            form.base_fields['quantity'].widget = forms.HiddenInput()
+        else:
+            pass
+        
         return form
 
     def get_readonly_fields(self, request, obj=None):

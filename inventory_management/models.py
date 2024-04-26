@@ -60,6 +60,11 @@ class Product(models.Model):
 
 
 class ProductUnit(models.Model):
+    TYPE_CHOICES = (
+        ('none', 'Nenhum'),
+        ('liso', 'Liso'),
+        ('estampado', 'Estampado'),
+    )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
     location = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Localização")
@@ -68,6 +73,9 @@ class ProductUnit(models.Model):
     meters = models.DecimalField("Metros", max_digits=10, decimal_places=2, null=False, blank=False)
     ncm = models.CharField("NCM", max_length=8, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
+    type = models.CharField("Tipo", max_length=10, choices=TYPE_CHOICES, default='none')
+    color = models.CharField("Cor", max_length=50, null=True, blank=True )
+    pattern = models.CharField("Estampa", max_length=50, null=True, blank=True)
     modified = models.DateTimeField("Modificado", auto_now=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
 
@@ -75,12 +83,18 @@ class ProductUnit(models.Model):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
         for i in range(1, self.quantity):
-            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, meters=self.meters, ncm=self.ncm)
+            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, meters=self.meters, ncm=self.ncm, type=self.type, color=self.color, pattern=self.pattern)
 
         self.__class__.objects.filter(id=self.id).update(quantity=1)
 
 
     def clean(self):
+        if self.type == 'liso' and not self.color:
+            raise ValidationError("Preencha a cor.")
+
+        if self.type == 'estampado' and not self.pattern:
+            raise ValidationError("Preencha a estampa.")
+        
         if self.quantity < 1:
             raise ValidationError("A quantidade deve ser maior que 0.")
         
