@@ -87,8 +87,8 @@
                     <div class="col-12">
                         <label for="destination" class="form-label">Destino:</label>
                         <select name="destination" id="destination" class="form-select">
-                            {% for room in rooms %}
-                            <option value="{{ room.id }}">{{ room }}</option>
+                            {% for shelf in shelves %}
+                            <option value="{{ shelf.id }}">{{ shelf }}</option>
                             {% endfor %}
                         </select>
                     </div>

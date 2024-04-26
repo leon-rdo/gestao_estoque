@@ -131,7 +131,7 @@ class StockTransfer(models.Model):
         super(StockTransfer, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product_unit.product.name} - {self.origin.building} (sala {self.origin}) -> {self.destination.building} (sala {self.destination})"
+        return f"{self.product_unit.product.name} - {self.origin.hall.room.building} ( {self.origin}) -> {self.destination.hall.room.building} ({self.destination})"
 
     class Meta:
         verbose_name_plural = "Transferências de Estoque"

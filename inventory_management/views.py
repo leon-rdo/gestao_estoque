@@ -71,7 +71,7 @@ class ProductUnitDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['rooms'] = Room.objects.exclude(pk=self.get_object().location.id)
+        context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
         return context
         
     def post(self, request, *args, **kwargs):
@@ -86,7 +86,7 @@ class ProductUnitDetailView(DetailView):
             observations = request.POST.get('observations')
             
             origin = product_unit.location
-            destination = Room.objects.get(pk=destination_id)
+            destination = Shelf.objects.get(pk=destination_id)
             
             StockTransfer.objects.create(
                 product_unit=product_unit,
