@@ -63,18 +63,18 @@
     </div>
     {% else %}
         <div class="column d-flex flex-column justify-content-center align-items-center mt-4">
-            <div class="col-12 col-md-6 d-flex justify-content-center">
-                <form id="write_off_form" method="post" action="">
+            <div class="col-12 col-md-3 d-flex justify-content-center">
+                <form id="write_off_form" class="w-100" method="post" action="">
                     {% csrf_token %}
                     <input type="hidden" name="write_off" value="True">
-                    <button type="submit" class="btn btn-danger"><i class="bi bi-archive"></i> Dar baixa</button>
+                    <button type="submit" class="btn btn-danger flex-fill w-100"><i class="bi bi-archive"></i> Dar baixa</button>
                 </form>
             </div>
-            <div class="col-12 col-md-6 d-flex mt-3 justify-content-center">
-                <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
+            <div class="col-12 col-md-3 d-flex mt-3 justify-content-center">
+                <button class="btn btn-primary flex-fill" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
                     <i class="bi bi-arrow-right"></i> Realizar transferência
                 </button>
-            </div>
+            </div>            
         </div>
         <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
             <div class="offcanvas-header">
