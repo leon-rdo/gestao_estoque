@@ -11,6 +11,15 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from django.shortcuts import render
 from io import BytesIO
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Count, Sum
+import pandas as pd
+from django.db.models import F, ExpressionWrapper, DecimalField
+import matplotlib.pyplot as plt
+import io
+import base64
+
 
 
 class IndexView(TemplateView):
@@ -212,3 +221,120 @@ def get_qr_size(size_preset):
     elif size_preset == 'grande':
         return 200  # Ajuste o valor conforme necessário
 
+class DashboardView(TemplateView):
+    template_name = 'admin/dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Calcular a quantidade total de produtos no estoque ao longo do tempo
+        stock_quantity_over_time = []
+        today = timezone.now().date()
+        for i in range(30):  # Considerar os últimos 30 dias
+            date = today - timedelta(days=i)
+            total_quantity = ProductUnit.objects.filter(purchase_date=date).aggregate(total_quantity=Sum('quantity'))['total_quantity']
+            stock_quantity_over_time.append({'date': date, 'total_quantity': total_quantity or 0})
+
+        product_quantity_by_category = Category.objects.annotate(total_quantity=Count('product')).values('name', 'total_quantity')
+       
+        stock_transfers = StockTransfer.objects.all()
+        
+        # Converter os dados em um DataFrame do Pandas
+        df = pd.DataFrame(list(stock_transfers.values()))
+        
+        # Converter a coluna 'transfer_date' para o tipo datetime
+        df['transfer_date'] = pd.to_datetime(df['transfer_date'])
+        
+        # Calcular o número de movimentos de estoque por mês, trimestre, semestre e ano
+        df['year'] = df['transfer_date'].dt.strftime('%Y')
+        df['quarter'] = df['transfer_date'].dt.quarter
+        df['semester'] = df['transfer_date'].apply(lambda x: (x.month-1)//6 + 1)
+        
+        
+        movements_per_month = df.groupby(df['transfer_date'].dt.strftime('%Y-%m'))['id'].count()
+        movements_per_quarter = df.groupby(['year', 'quarter'])['id'].count()
+        movements_per_semester = df.groupby(['year', 'semester'])['id'].count()
+        movements_per_year = df.groupby('year')['id'].count()
+
+        category_slug = self.request.GET.get('category_slug')
+        product_slug = self.request.GET.get('product_slug')
+        
+        # Inicializar um dicionário para armazenar os valores de estoque por categoria, produto e o valor total geral
+        total_stock_values = {}
+        overall_value = 0
+        
+        # Obter todas as categorias
+        categories = Category.objects.all()
+        
+        for category in categories:
+            # Calcular o valor total para a categoria atual
+            category_total = 0
+            
+            # Obter todos os produtos dentro da categoria atual
+            products = Product.objects.filter(category=category)
+            
+            category_products = {}
+            
+            for product in products:
+                # Calcular o valor total para o produto atual
+                product_units = ProductUnit.objects.filter(product=product)
+                product_value = sum(unit.meters * unit.product.price for unit in product_units)
+                category_products[product] = product_value
+                category_total += product_value
+            
+            # Adicionar o valor total da categoria ao dicionário total_stock_values
+            total_stock_values[category] = {'total': category_total, 'products': category_products}
+            
+            # Adicionar o valor total da categoria ao valor geral
+            overall_value += category_total
+        
+
+        write_off_products = ProductUnit.objects.filter(write_off=True)
+
+        total_write_off_value = write_off_products.annotate(
+            total_value=ExpressionWrapper(F('meters') * F('product__price'), output_field=DecimalField())
+        ).aggregate(total=Sum('total_value'))['total']
+
+        product_write_off_counts = write_off_products.values('product__name').annotate(total=Count('id')).order_by('-total')[:5]
+        category_write_off_counts = write_off_products.values('product__category__name').annotate(total=Count('id')).order_by('-total')[:5]
+        
+        # Preparar dados para o gráfico de barras horizontais
+        product_labels = [item['product__name'] for item in product_write_off_counts]
+        product_counts = [item['total'] for item in product_write_off_counts]
+        category_labels = [item['product__category__name'] for item in category_write_off_counts]
+        category_counts = [item['total'] for item in category_write_off_counts]
+        
+        # Gerar gráfico de barras horizontais para produtos
+        fig, ax = plt.subplots()
+        ax.barh(product_labels, product_counts)
+        ax.set_xlabel('Número de Baixas')
+        ax.set_ylabel('Produtos')
+        ax.set_title('Produtos com Mais Baixas')
+        
+        # Converter o gráfico em formato base64
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png')
+        buffer.seek(0)
+        chart_data = base64.b64encode(buffer.getvalue()).decode()
+        plt.close()
+
+        products = Product.objects.all()
+
+        # Calcular o total de metros para cada produto
+        for product in products:
+            total_meters = ProductUnit.objects.filter(product=product).aggregate(total=Sum('meters'))['total']
+            product.total_meters = total_meters or 0
+        
+        context['products'] = products
+        context['product_chart'] = chart_data
+        context['product_write_off_counts'] = product_write_off_counts
+        context['category_write_off_counts'] = category_write_off_counts
+        context['total_write_off_value'] = total_write_off_value or 0
+        context['total_stock_values'] = total_stock_values
+        context['overall_value'] = overall_value
+        context['movements_per_month'] = movements_per_month
+        context['movements_per_quarter'] = movements_per_quarter
+        context['movements_per_semester'] = movements_per_semester
+        context['movements_per_year'] = movements_per_year
+        context['product_quantity_by_category'] = product_quantity_by_category    
+        context['stock_quantity_over_time'] = stock_quantity_over_time[::-1]
+        return context

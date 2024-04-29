@@ -15,4 +15,5 @@ urlpatterns = [
     path('enderecos/<slug:slug>/', AddressDetailView.as_view(), name='address_detail'),
     path('get_product_location/<slug:slug>', GetProductLocationView.as_view(), name='get_product_location'),
     path('generate_qr_codes', views.generate_qr_codes, name='generate_qr_codes'),
+    path('dashboard/', DashboardView.as_view(), name='dashboard'),
 ]
