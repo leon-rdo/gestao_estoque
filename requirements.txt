@@ -2,7 +2,9 @@ asgiref==3.7.2
 chardet==5.2.0
 Django==5.0.1
 django-jazzmin==2.6.1
+matplotlib==3.8.4
 mysqlclient==2.2.4
+pandas==2.2.2
 pillow==10.2.0
 pypng==0.20220715.0
 python-dotenv==1.0.1
