@@ -165,8 +165,8 @@ class Building(models.Model):
         return self.name
 
     class Meta:
-        verbose_name_plural = "Prédios"
-        verbose_name = "Prédio"
+        verbose_name_plural = "Lojas"
+        verbose_name = "Loja"
 
 
 class Room(models.Model):
