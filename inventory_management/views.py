@@ -11,6 +11,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from django.shortcuts import render
 from io import BytesIO
+from django.utils import timezone
 
 
 class IndexView(TemplateView):
@@ -154,8 +155,12 @@ def generate_qr_codes(request):
                     qr_codes.append(qr)
 
                 # Gerar PDF com os códigos QR
+                local_now = timezone.localtime(timezone.now())
+                timestamp = local_now.strftime("%d/%m/%Y - %H%M%S")
+                filename = f"qr_codes_{timestamp}.pdf"
+
                 response = HttpResponse(content_type='application/pdf')
-                response['Content-Disposition'] = 'attachment; filename="qr_codes.pdf"'
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
                 buffer = BytesIO()
                 c = canvas.Canvas(buffer, pagesize=letter)
 
