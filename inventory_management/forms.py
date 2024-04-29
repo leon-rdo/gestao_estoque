@@ -7,4 +7,4 @@ class QRCodeForm(forms.Form):
             ('medio', 'Médio'),
             ('grande', 'Grande'),
         ]
-    size_preset = forms.ChoiceField(label='Tamanho', choices=SIZE_PRESETS)
+    size_preset = forms.ChoiceField(label='Tamanho', choices=SIZE_PRESETS, widget=forms.Select(attrs={'style': 'width: 300px;', 'class': 'form-select'}))
