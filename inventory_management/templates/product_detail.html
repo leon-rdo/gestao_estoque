@@ -49,6 +49,15 @@
     <h4 class="d-flex justify-content-center"><strong>Total em metros: {{total_meters}}m</h4></strong>
     {% endif %}
 </div>
+<form id="filter_form" method="GET" action="">
+    <label for="write_off" class="form-label">Filtrar por Baixa</label>
+    <select name="write_off" class="form-select">
+        <option value="false">Não Baixados</option>
+        <option value="baixados">Baixados</option>
+        <option value="todos">Todos</option>
+    </select>
+    <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
+</form>
 {% else %}
 <div class="row justify-content-center align-items-center g-2 pb-3">
     <div class="col-12 col-md-6">
@@ -69,15 +78,6 @@
 </div>
 {% endif %}
 
-<form id="filter_form" method="GET" action="">
-    <label for="write_off" class="form-label">Filtrar por Baixa</label>
-    <select name="write_off" class="form-select">
-        <option value="false">Não Baixados</option>
-        <option value="baixados">Baixados</option>
-        <option value="todos">Todos</option>
-    </select>
-    <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
-</form>
 
 {% endblock %}
 
