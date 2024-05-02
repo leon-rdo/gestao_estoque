@@ -22,16 +22,39 @@ class CategoryListView(ListView):
     model = Category
     template_name = 'category_list.html'
     context_object_name = 'categories'
+    paginate_by = 6
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        filtro = self.request.GET.get('search')
+
+        if filtro:
+            queryset = queryset.filter(name__icontains=filtro)
+            
+        return queryset
 
 
 class CategoryItemsView(ListView):
     model = Product
     template_name = 'category_items.html'
+    paginate_by = 6
+    context_object_name = 'products'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        filtro = self.request.GET.get('search')
+        category = Category.objects.get(slug=self.kwargs['slug'])
+
+        if filtro:
+            queryset = queryset.filter(name__icontains=filtro, category=category)
+        else:
+            queryset = queryset.filter(category=category)
+            
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = Category.objects.get(slug=self.kwargs['slug'])
-        context['products'] = Product.objects.filter(category=context['category'])
         return context
 
 
