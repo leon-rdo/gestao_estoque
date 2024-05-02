@@ -2,6 +2,7 @@ from django.db import models
 from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 import uuid 
 
 class Category(models.Model):
@@ -136,7 +137,6 @@ class ProductUnit(models.Model):
 
         self.__class__.objects.filter(id=self.id).update(quantity=1)
 
-
     def clean(self):
         if self.quantity < 1:
             raise ValidationError("A quantidade deve ser maior que 0.")
@@ -270,3 +270,42 @@ class Shelf (models.Model):
         verbose_name_plural = "Prateleiras"
         verbose_name = "Prateleira"
         ordering = ['name']
+
+class ClothConsumption(models.Model):
+    product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
+    consumption = models.DecimalField("Consumo", max_digits=10, decimal_places=2)
+    weight_length_before = models.DecimalField("Tamanho / Peso Antes", max_digits=10, decimal_places=2, blank=True, null=True)
+    weight_length_after = models.DecimalField("Tamanho / Peso Depois", max_digits=10, decimal_places=2, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        # Obter o objeto ProductUnit associado
+        product_unit = self.product_unit
+
+        # Armazenar o peso/tamanho antes da subtração
+        self.weight_length_before = product_unit.weight_length
+
+        # Subtrair o consumo do peso/tamanho
+        product_unit.weight_length -= self.consumption
+        product_unit.save()
+
+        # Armazenar o peso/tamanho depois da subtração
+        self.weight_length_after = product_unit.weight_length
+
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        product_unit = self.product_unit
+        if self.consumption > product_unit.weight_length:
+            raise ValidationError(_("O consumo não pode ser maior que o peso/tamanho antes da subtração."))
+        # Verificar se o peso/tamanho depois da subtração é negativo
+        if self.weight_length_after is not None and self.weight_length_after < 0:
+            raise ValidationError(_("O peso/tamanho depois da subtração não pode ser negativo."))
+
+        super().clean()
+
+    def __str__(self):
+        return f'{self.product_unit.product.name} - {self.pk}'
+
+    class Meta:
+        verbose_name_plural = "Consumos de Tecido"
+        verbose_name = "Consumo de Tecido"

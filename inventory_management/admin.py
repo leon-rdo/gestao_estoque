@@ -65,23 +65,31 @@ def write_on_products(modeladmin, request, queryset):
             product_unit.save()
 write_on_products.short_description = "Retornar ao estoque os produtos selecionados"
 
+class ClothConsumptionInline(admin.TabularInline):
+    model = ClothConsumption
+    readonly_fields = ('weight_length_before','weight_length_after',)
+    extra = 1
+
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location', 'weight_length_with_measure', 'purchase_date', 'write_off')
     search_fields = ('product__name', 'location__name', 'id', 'code')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
     actions = [download_qr_codes, write_off_products, write_on_products]
+    inlines = [ClothConsumptionInline]
 
+    
     def  weight_length_with_measure(self, obj):
         product_measure = obj.product.get_measure_display()
         return f"{obj. weight_length} {product_measure}"
     weight_length_with_measure.short_description = 'Tamanho / Peso'
-
+    
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if obj:
             form.base_fields['quantity'].widget = forms.HiddenInput()
+            form.base_fields['weight_length'].disabled = True
         else:
             pass
         return form
@@ -116,6 +124,11 @@ class ProductUnitAdmin(admin.ModelAdmin):
         extra_context['show_custom_qr_button'] = True
         return super().changelist_view(request, extra_context=extra_context)
 
+    def get_inline_instances(self, request, obj=None):
+        if obj:
+            return [inline(self.model, self.admin_site) for inline in self.inlines]
+        else:
+            return []
 
 @admin.register(StockTransfer)
 class StockTransferAdmin(admin.ModelAdmin):
