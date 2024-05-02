@@ -67,10 +67,16 @@ write_on_products.short_description = "Retornar ao estoque os produtos seleciona
 
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'location', 'meters' ,'purchase_date', 'write_off')
+    list_display = ('product', 'location', 'weight_length_with_measure', 'purchase_date', 'write_off')
     search_fields = ('product__name', 'location__name', 'id', 'code')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
     actions = [download_qr_codes, write_off_products, write_on_products]
+
+    def  weight_length_with_measure(self, obj):
+        product_measure = obj.product.get_measure_display()
+        return f"{obj. weight_length} {product_measure}"
+    weight_length_with_measure.short_description = 'Tamanho / Peso'
+
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -109,6 +115,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['show_custom_qr_button'] = True
         return super().changelist_view(request, extra_context=extra_context)
+
 
 @admin.register(StockTransfer)
 class StockTransferAdmin(admin.ModelAdmin):

@@ -62,11 +62,19 @@ class Pattern(models.Model):
         
         
 class Product(models.Model):
+    MEASURE_CHOICES = (
+        ('cm', 'Centímetros'),
+        ('m', 'Metros'),
+        ('g', 'Gramas'),
+        ('kg', 'Quilogramas'),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     category = models.ForeignKey('inventory_management.Category', on_delete=models.CASCADE, verbose_name="Categoria")
     name = models.CharField("Nome do Produto", max_length=100)
     description = models.TextField("Descrição")
     price = models.DecimalField("Preço", max_digits=10, decimal_places=2)
+    measure = models.CharField("Medida", max_length=2, choices=MEASURE_CHOICES)
     image = models.ImageField("Imagem", upload_to='product_images', blank=True, null=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     color = models.ForeignKey('inventory_management.Color', on_delete=models.CASCADE, verbose_name="Cor", blank=True, null=True, editable=False)
@@ -113,7 +121,7 @@ class ProductUnit(models.Model):
     location = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Localização")
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
-    meters = models.DecimalField("Metros", max_digits=10, decimal_places=2, null=False, blank=False)
+    weight_length = models.DecimalField("Tamanho / Peso", max_digits=10, decimal_places=2, null=False, blank=False)
     code = models.CharField("Código", max_length=255, null=True, blank=True)
     ncm = models.CharField("NCM", max_length=8, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
