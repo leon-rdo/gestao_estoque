@@ -172,7 +172,9 @@
                         <label for="destination" class="form-label">Destino:</label>
                         <select name="destination" id="destination" class="form-select">
                             {% for shelf in shelves %}
-                            <option value="{{ shelf.id }}">{{ shelf }}</option>
+                                <option value="{{ shelf.id }}">{{ shelf }}</option>
+                            {% empty %}
+                                <option value="">Nenhuma localização cadastrada</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -181,7 +183,7 @@
                         <textarea name="observations" id="observations" class="form-control"></textarea>
                     </div>
                     <div class="col-12 text-center">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-right"></i> Transferir</button>
+                        <button type="submit" class="btn btn-primary" {% if not shelves %}disabled{% endif %}><i class="bi bi-arrow-right"></i> Transferir</button>
                     </div>
                 </form>
             </div>            

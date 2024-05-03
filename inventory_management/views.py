@@ -14,7 +14,8 @@ from io import BytesIO
 from django.utils import timezone
 from decimal import Decimal
 from django.contrib.auth.models import User
-from django.db.models import Max
+from django.db.models import Max, Sum
+from django.core.paginator import Paginator, PageNotAnInteger
 
 
 class IndexView(TemplateView):
@@ -66,7 +67,6 @@ class ProductListView(ListView):
     template_name = 'product_list.html'
     context_object_name = 'products'
 
-from django.db.models import Sum
 
 class ProductDetailView(DetailView):
     model = Product
@@ -75,9 +75,9 @@ class ProductDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.get_object()
-        
         write_off = self.request.GET.get('write_off')
         product_units = product.productunit_set.all() 
+        
         if write_off == 'baixados':
             product_units = product_units.filter(write_off=True)
         elif write_off == 'todos':
@@ -85,11 +85,18 @@ class ProductDetailView(DetailView):
         else:
             product_units = product_units.filter(write_off=False)
         
+        paginator = Paginator(product_units, 8)
+        page = self.request.GET.get('page')
+        try:
+            product_units_page = paginator.page(page)
+        except PageNotAnInteger:
+            product_units_page = paginator.page(1)
+        
         total_meters = product_units.aggregate(total_meters=Sum('weight_length'))['total_meters']
         context['total_meters'] = total_meters if total_meters else 0
+        context['product_units'] = product_units_page 
+        context['page_obj'] = product_units_page 
         
-        context['product_units'] = product_units 
-            
         return context
 
 class ProductUnitDetailView(DetailView):

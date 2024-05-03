@@ -215,6 +215,10 @@ class Write_off(models.Model):
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='writeoff_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+    
+    class Meta:
+        verbose_name_plural = "Baixas"
+        verbose_name = "Baixa"
 
 
 class Building(models.Model):
