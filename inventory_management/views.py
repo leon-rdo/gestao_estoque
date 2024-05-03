@@ -103,7 +103,6 @@ class ProductUnitDetailView(DetailView):
             last_write_off = Write_off.objects.filter(product_unit=product_unit).aggregate(last_write_off_date=Max('write_off_date'))
             last_write_off_date = last_write_off.get('last_write_off_date')
 
-            # Se houver uma última data de Write_off
             if last_write_off_date:
                 last_write_off = Write_off.objects.filter(product_unit=product_unit, write_off_date=last_write_off_date).first()
                 employee = last_write_off.employee if last_write_off.employee else None
@@ -154,7 +153,6 @@ class ProductUnitDetailView(DetailView):
                         weight_length_after=product_unit.weight_length - consumption_decimal
                     )
                 except ValidationError as e:
-                    # Retornar mensagens de erro como uma resposta JSON
                     return JsonResponse({'consumption': e.message}, status=400)
 
 
@@ -186,8 +184,8 @@ class GetProductLocationView(View):
         return JsonResponse({'location': str(product_unit.location.slug)})
     
 def calculate_items_per_page(page_width, page_height, qr_size, columns):
-    available_width = page_width - 100  # Ajuste conforme necessário
-    available_height = page_height - 100  # Ajuste conforme necessário
+    available_width = page_width - 100 
+    available_height = page_height - 100  
 
     max_columns = columns
     max_rows = available_height // (qr_size + 20)
@@ -215,8 +213,16 @@ def generate_qr_codes(request):
 
                 # Gerar PDF com os códigos QR
                 local_now = timezone.localtime(timezone.now())
-                timestamp = local_now.strftime("%d/%m/%Y - %H%M%S")
-                filename = f"qr_codes_{timestamp}.pdf"
+                timestamp = local_now.strftime("%d-%m-%Y_%H%M%S")
+
+                # Obtém os nomes dos produtos
+                unique_products = set(product_unit.product.name for product_unit in queryset)
+
+# Formata os nomes dos produtos para incluí-los no nome do arquivo
+                products_str = '_'.join(unique_products)
+
+                # Concatena o carimbo de data e hora e os nomes dos produtos ao nome do arquivo
+                filename = f"qr_codes_{products_str}_{timestamp}.pdf"
 
                 response = HttpResponse(content_type='application/pdf')
                 response['Content-Disposition'] = f'attachment; filename="{filename}"'
