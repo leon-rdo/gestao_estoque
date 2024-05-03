@@ -183,6 +183,14 @@ class StockTransfer(models.Model):
     def get_absolute_url(self):
         return reverse('inventory_management:product_unit_detail', kwargs={'category_slug':self.product_unit.product.category.slug, 'product_slug':self.product_unit.product.slug, 'slug': self.product_unit.slug})
 
+class Write_off(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
+    origin = models.TextField("Origem", blank=True, null=True)
+    destination = models.TextField("Destino", blank=True, null=True)
+    write_off_date = models.DateField("Data de Baixa")
+    observations = models.TextField("Observações", blank=True, null=True)
+
 
 class Building(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

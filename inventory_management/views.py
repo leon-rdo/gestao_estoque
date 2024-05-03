@@ -59,7 +59,7 @@ class ProductDetailView(DetailView):
         else:
             product_units = product_units.filter(write_off=False)
         
-        total_meters = product_units.aggregate(total_meters=Sum('meters'))['total_meters']
+        total_meters = product_units.aggregate(total_meters=Sum('weight_length'))['total_meters']
         context['total_meters'] = total_meters if total_meters else 0
         
         context['product_units'] = product_units 
@@ -73,6 +73,8 @@ class ProductUnitDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
+        context['consumption'] = ClothConsumption.objects.filter(product_unit=self.get_object())
+        context['write_offs'] = Write_off.objects.filter(product_unit=self.get_object())
         return context
         
     def post(self, request, *args, **kwargs):
@@ -80,8 +82,23 @@ class ProductUnitDetailView(DetailView):
 
         if 'write_off' in request.POST:
             product_unit.write_off = True
+            Write_off.objects.create(
+                product_unit=product_unit,
+                origin= product_unit.location,
+                destination= "Baixa",
+                write_off_date=date.today(),
+                observations= "Baixa de produto"
+            )
+            
         elif request.POST.get('back_to_stock') == 'True':
             product_unit.write_off = False
+            Write_off.objects.create(
+                product_unit=product_unit,
+                origin="Baixa",
+                destination= product_unit.location,
+                write_off_date=date.today(),
+                observations= "Retorno ao estoque"
+            )
         else:
             destination_id = request.POST.get('destination')
             observations = request.POST.get('observations')

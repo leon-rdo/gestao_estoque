@@ -32,17 +32,42 @@
                         <td>{{ transfer.observations }}</td>
                     </tr>
                     {% endfor %}
-                    {% if object.write_off %}
+                    {% for write_off in write_offs %}
                     <tr>
-                        <td>{{ object.modified }}</td>
-                        <td>{{ object.location }}</td>
-                        <td>Baixa</td>
-                        <td>Baixa Realizada</td>
+                        <td>{{ write_off.write_off_date }}</td>
+                        <td>{{ write_off.origin }}</td>
+                        <td>{{ write_off.destination }}</td>
+                        <td>{{ write_off.observations }}</td>
                     </tr>
-                    {% endif %}
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
+    </div>
+    {% endif %}
+
+    {% if consumptions %}
+
+    <div class="col-12 my-4">
+        <h2 class="mb-3">Consumos</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Consumo</th>
+                    <th scope="col">Tamanho / Peso Antes</th>
+                    <th scope="col">Tamanho / Peso Depois</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for consumption in consumptions %}
+                <tr>
+                    <td>{{ consumption.consumption }}</td>
+                    <td>{{ consumption.weight_length_before }}</td>
+                    <td>{{ consumption.weight_length_after }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     {% endif %}
 
