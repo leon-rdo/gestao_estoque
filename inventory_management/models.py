@@ -33,6 +33,10 @@ class Color(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Cor", max_length=100)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='color_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='color_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -49,6 +53,10 @@ class Pattern(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Estampa", max_length=100)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='pattern_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='pattern_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -80,6 +88,10 @@ class Product(models.Model):
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     color = models.ForeignKey('inventory_management.Color', on_delete=models.CASCADE, verbose_name="Cor", blank=True, null=True, editable=False)
     pattern = models.ForeignKey('inventory_management.Pattern', on_delete=models.CASCADE, verbose_name="Estampa", blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='product_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='product_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def __init__(self, *args, **kwargs):
         super(Product, self).__init__(*args, **kwargs)
@@ -128,12 +140,16 @@ class ProductUnit(models.Model):
     write_off = models.BooleanField("Baixado?", default=False)
     modified = models.DateTimeField("Modificado", auto_now=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='productunit_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='productunit_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
         for i in range(1, self.quantity):
-            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, meters=self.meters, ncm=self.ncm)
+            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, ncm=self.ncm)
 
         self.__class__.objects.filter(id=self.id).update(quantity=1)
 
@@ -160,6 +176,10 @@ class StockTransfer(models.Model):
     destination = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
     transfer_date = models.DateField("Data da Transferência")
     observations = models.TextField("Observações", blank=True, null=True)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='stock_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='stock_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         if self.origin == self.destination:
@@ -191,6 +211,10 @@ class Write_off(models.Model):
     write_off_date = models.DateTimeField("Data de Baixa")
     observations = models.TextField("Observações", blank=True, null=True)
     employee = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name="Funcionário", blank=True, null=True)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='writeoff_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='writeoff_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
 
 class Building(models.Model):
@@ -204,6 +228,10 @@ class Building(models.Model):
     city = models.CharField("Cidade", max_length=100)
     state = models.CharField("Estado (UF)", max_length=2)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='building_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='building_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def address(self):
         return f"{self.street}, {self.number} - {self.neighborhood}, {self.city} - {self.state}, {self.cep}"
@@ -225,6 +253,10 @@ class Room(models.Model):
     name = models.CharField("Nome da Sala", max_length=100)
     building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='room_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='room_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def address(self):
         return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} "
@@ -246,6 +278,10 @@ class Hall (models.Model):
     name = models.CharField("Nome do Corredor", max_length=100)
     room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='hall_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='hall_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
@@ -264,6 +300,10 @@ class Shelf (models.Model):
     name = models.CharField("Nome da Prateleira", max_length=100)
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='shelf_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='shelf_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
@@ -285,19 +325,18 @@ class ClothConsumption(models.Model):
     consumption = models.DecimalField("Consumo", max_digits=10, decimal_places=2)
     weight_length_before = models.DecimalField("Tamanho / Peso Antes", max_digits=10, decimal_places=2, blank=True, null=True)
     weight_length_after = models.DecimalField("Tamanho / Peso Depois", max_digits=10, decimal_places=2, blank=True, null=True)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='cloth_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='cloth_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
-        # Obter o objeto ProductUnit associado
         product_unit = self.product_unit
-
-        # Armazenar o peso/tamanho antes da subtração
         self.weight_length_before = product_unit.weight_length
 
-        # Subtrair o consumo do peso/tamanho
         product_unit.weight_length -= self.consumption
         product_unit.save()
 
-        # Armazenar o peso/tamanho depois da subtração
         self.weight_length_after = product_unit.weight_length
 
         super().save(*args, **kwargs)
