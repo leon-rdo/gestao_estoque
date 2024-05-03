@@ -188,9 +188,9 @@ class Write_off(models.Model):
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
     origin = models.CharField("Origem", blank=True, null=True, max_length=100)
     destination = models.CharField("Destino", blank=True, null=True, max_length=100)
-    write_off_date = models.DateField("Data de Baixa")
+    write_off_date = models.DateTimeField("Data de Baixa")
     observations = models.TextField("Observações", blank=True, null=True)
-    employee = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name="Funcionário")
+    employee = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name="Funcionário", blank=True, null=True)
 
 
 class Building(models.Model):

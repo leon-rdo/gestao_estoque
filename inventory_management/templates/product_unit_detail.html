@@ -21,6 +21,7 @@
                         <th scope="col">Origem</th>
                         <th scope="col">Destino</th>
                         <th scope="col">Observações</th>
+                        <th scope="col">Responsável</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -30,6 +31,7 @@
                         <td>{{ transfer.origin }}</td>
                         <td>{{ transfer.destination }}</td>
                         <td>{{ transfer.observations }}</td>
+                        <td> - </td>
                     </tr>
                     {% endfor %}
                     {% for write_off in write_offs %}
@@ -38,6 +40,7 @@
                         <td>{{ write_off.origin }}</td>
                         <td>{{ write_off.destination }}</td>
                         <td>{{ write_off.observations }}</td>
+                        <td>{{ write_off.employee }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -133,12 +136,20 @@
                                         <input type="number" class="form-control" id="consumption" name="consumption" placeholder="Insira o consumo do material">
                                         <span class="text-danger consumption-error"></span>
                                     </div>
+                                    <div class="form-group">
+                                        <label for="employee" class="form-label">Responsável:</label>
+                                        <select name="employee" id="employee" class="form-select">
+                                            {% for employee in employees %}
+                                            <option value="{{ employee.id }}">{{ employee }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                                 <button type="submit" class="btn btn-danger">Confirmar Baixa</button>
-                                </form>
                             </div>
+                        </form>
                         </div>
                     </div>
                 </div>  
@@ -230,7 +241,8 @@
                 data: form.serialize(),
                 success: function(data){
                     // Sucesso ao enviar o formulário
-                    // Redirecionar, fechar o modal, ou qualquer outra ação necessária
+                    // Recarregar a página para refletir as alterações
+                    window.location.reload();
                 },
                 error: function(xhr, textStatus, errorThrown){
                     // Erro ao enviar o formulário

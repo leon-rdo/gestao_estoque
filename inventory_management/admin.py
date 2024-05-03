@@ -146,7 +146,7 @@ class StockTransferAdmin(admin.ModelAdmin):
 
 @admin.register(Write_off)
 class WriteOffAdmin(admin.ModelAdmin):
-    list_display = ('product_unit', 'write_off_date')
+    list_display = ('product_unit', 'write_off_date', 'employee')
     search_fields = ('product_unit__product__name', 'product_unit__location__name')
     list_filter = ('write_off_date',)
 

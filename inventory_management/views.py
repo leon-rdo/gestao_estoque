@@ -13,6 +13,8 @@ from django.shortcuts import render
 from io import BytesIO
 from django.utils import timezone
 from decimal import Decimal
+from django.contrib.auth.models import User
+from django.db.models import Max
 
 
 class IndexView(TemplateView):
@@ -76,6 +78,8 @@ class ProductUnitDetailView(DetailView):
         context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
         context['consumption'] = ClothConsumption.objects.filter(product_unit=self.get_object())
         context['write_offs'] = Write_off.objects.filter(product_unit=self.get_object())
+        context['employees'] = User.objects.all()
+        
         return context
         
     def post(self, request, *args, **kwargs):
@@ -83,22 +87,36 @@ class ProductUnitDetailView(DetailView):
 
         if 'write_off' in request.POST:
             product_unit.write_off = True
+            employee_id = request.POST.get('employee')
+            employee = User.objects.get(pk=employee_id)
             Write_off.objects.create(
                 product_unit=product_unit,
                 origin= product_unit.location,
                 destination= "Baixa",
-                write_off_date=date.today(),
-                observations= "Baixa de produto"
+                write_off_date=timezone.now(),
+                observations= "Baixa de produto",
+                employee = employee
             )
             
         elif request.POST.get('back_to_stock') == 'True':
             product_unit.write_off = False
+            last_write_off = Write_off.objects.filter(product_unit=product_unit).aggregate(last_write_off_date=Max('write_off_date'))
+            last_write_off_date = last_write_off.get('last_write_off_date')
+
+            # Se houver uma última data de Write_off
+            if last_write_off_date:
+                last_write_off = Write_off.objects.filter(product_unit=product_unit, write_off_date=last_write_off_date).first()
+                employee = last_write_off.employee if last_write_off.employee else None
+            else:
+                employee = None
+
             Write_off.objects.create(
                 product_unit=product_unit,
                 origin="Baixa",
-                destination= product_unit.location,
-                write_off_date=date.today(),
-                observations= "Retorno ao estoque"
+                destination=product_unit.location,
+                write_off_date=timezone.now(),
+                observations="Retorno ao estoque",
+                employee=employee, 
             )
         else:
             destination_id = request.POST.get('destination')
