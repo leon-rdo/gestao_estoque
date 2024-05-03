@@ -2,6 +2,7 @@ from django.db import models
 from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 import uuid 
 
 class Category(models.Model):
@@ -28,15 +29,82 @@ class Category(models.Model):
     def get_absolute_url(self):
         return reverse('inventory_management:category_items', kwargs={'slug': self.slug})
 
+class Color(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField("Nome da Cor", max_length=100)
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='color_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='color_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(Color, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Cores"
+        verbose_name = "Cor"
+        
+class Pattern(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField("Nome da Estampa", max_length=100)
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='pattern_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='pattern_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(Pattern, self).save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Estampas"
+        verbose_name = "Estampa"
+        
+        
 class Product(models.Model):
+    MEASURE_CHOICES = (
+        ('cm', 'Centímetros'),
+        ('m', 'Metros'),
+        ('g', 'Gramas'),
+        ('kg', 'Quilogramas'),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     category = models.ForeignKey('inventory_management.Category', on_delete=models.CASCADE, verbose_name="Categoria")
     name = models.CharField("Nome do Produto", max_length=100)
     description = models.TextField("Descrição")
     price = models.DecimalField("Preço", max_digits=10, decimal_places=2)
+    measure = models.CharField("Medida", max_length=2, choices=MEASURE_CHOICES)
     image = models.ImageField("Imagem", upload_to='product_images', blank=True, null=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    color = models.ForeignKey('inventory_management.Color', on_delete=models.CASCADE, verbose_name="Cor", blank=True, null=True, editable=False)
+    pattern = models.ForeignKey('inventory_management.Pattern', on_delete=models.CASCADE, verbose_name="Estampa", blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='product_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='product_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def __init__(self, *args, **kwargs):
+        super(Product, self).__init__(*args, **kwargs)
+        if "estampado" in self.name.lower():
+            self.set_editable_fields(color=False, pattern=True)
+        elif "liso" in self.name.lower():
+            self.set_editable_fields(color=True, pattern=False)
+        else:
+            self.set_editable_fields(color=False, pattern=False)
+
+    def set_editable_fields(self, color, pattern):
+        self._meta.get_field('color').editable = color
+        self._meta.get_field('pattern').editable = pattern
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -57,45 +125,35 @@ class Product(models.Model):
     
     def get_absolute_url(self):
         return reverse('inventory_management:product_detail', kwargs={'category_slug':self.category.slug, 'slug': self.slug})
+    
 
 
 class ProductUnit(models.Model):
-    TYPE_CHOICES = (
-        ('none', 'Nenhum'),
-        ('liso', 'Liso'),
-        ('estampado', 'Estampado'),
-    )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
     location = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Localização")
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
-    meters = models.DecimalField("Metros", max_digits=10, decimal_places=2, null=False, blank=False)
+    weight_length = models.DecimalField("Tamanho / Peso", max_digits=10, decimal_places=2, null=False, blank=False)
     code = models.CharField("Código", max_length=255, null=True, blank=True)
     ncm = models.CharField("NCM", max_length=8, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
-    type = models.CharField("Tipo", max_length=10, choices=TYPE_CHOICES, default='none')
-    color = models.CharField("Cor", max_length=50, null=True, blank=True )
-    pattern = models.CharField("Estampa", max_length=50, null=True, blank=True)
     modified = models.DateTimeField("Modificado", auto_now=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='productunit_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='productunit_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
         for i in range(1, self.quantity):
-            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, meters=self.meters, ncm=self.ncm, type=self.type, color=self.color, pattern=self.pattern)
+            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, ncm=self.ncm)
 
         self.__class__.objects.filter(id=self.id).update(quantity=1)
 
-
     def clean(self):
-        if self.type == 'liso' and not self.color:
-            raise ValidationError("Preencha a cor.")
-
-        if self.type == 'estampado' and not self.pattern:
-            raise ValidationError("Preencha a estampa.")
-        
         if self.quantity < 1:
             raise ValidationError("A quantidade deve ser maior que 0.")
         
@@ -118,6 +176,10 @@ class StockTransfer(models.Model):
     destination = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
     transfer_date = models.DateField("Data da Transferência")
     observations = models.TextField("Observações", blank=True, null=True)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='stock_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='stock_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         if self.origin == self.destination:
@@ -141,6 +203,19 @@ class StockTransfer(models.Model):
     def get_absolute_url(self):
         return reverse('inventory_management:product_unit_detail', kwargs={'category_slug':self.product_unit.product.category.slug, 'product_slug':self.product_unit.product.slug, 'slug': self.product_unit.slug})
 
+class Write_off(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
+    origin = models.CharField("Origem", blank=True, null=True, max_length=100)
+    destination = models.CharField("Destino", blank=True, null=True, max_length=100)
+    write_off_date = models.DateTimeField("Data de Baixa")
+    observations = models.TextField("Observações", blank=True, null=True)
+    employee = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name="Funcionário", blank=True, null=True)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='writeoff_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='writeoff_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
 
 class Building(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -153,6 +228,10 @@ class Building(models.Model):
     city = models.CharField("Cidade", max_length=100)
     state = models.CharField("Estado (UF)", max_length=2)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='building_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='building_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def address(self):
         return f"{self.street}, {self.number} - {self.neighborhood}, {self.city} - {self.state}, {self.cep}"
@@ -165,8 +244,8 @@ class Building(models.Model):
         return self.name
 
     class Meta:
-        verbose_name_plural = "Prédios"
-        verbose_name = "Prédio"
+        verbose_name_plural = "Lojas"
+        verbose_name = "Loja"
 
 
 class Room(models.Model):
@@ -174,6 +253,10 @@ class Room(models.Model):
     name = models.CharField("Nome da Sala", max_length=100)
     building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='room_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='room_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def address(self):
         return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} "
@@ -195,6 +278,10 @@ class Hall (models.Model):
     name = models.CharField("Nome do Corredor", max_length=100)
     room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='hall_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='hall_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
@@ -213,6 +300,10 @@ class Shelf (models.Model):
     name = models.CharField("Nome da Prateleira", max_length=100)
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='shelf_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='shelf_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
@@ -228,3 +319,40 @@ class Shelf (models.Model):
         verbose_name_plural = "Prateleiras"
         verbose_name = "Prateleira"
         ordering = ['name']
+
+class ClothConsumption(models.Model):
+    product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
+    consumption = models.DecimalField("Consumo", max_digits=10, decimal_places=2)
+    weight_length_before = models.DecimalField("Tamanho / Peso Antes", max_digits=10, decimal_places=2, blank=True, null=True)
+    weight_length_after = models.DecimalField("Tamanho / Peso Depois", max_digits=10, decimal_places=2, blank=True, null=True)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='cloth_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='cloth_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        product_unit = self.product_unit
+        self.weight_length_before = product_unit.weight_length
+
+        product_unit.weight_length -= self.consumption
+        product_unit.save()
+
+        self.weight_length_after = product_unit.weight_length
+
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        product_unit = self.product_unit
+        if self.consumption > product_unit.weight_length:
+            raise ValidationError(_("O consumo não pode ser maior que o peso/tamanho antes da subtração."))
+        if self.weight_length_after is not None and self.weight_length_after < 0:
+            raise ValidationError(_("O peso/tamanho depois da subtração não pode ser negativo."))
+
+        super().clean()
+
+    def __str__(self):
+        return f'{self.product_unit.product.name} - {self.pk}'
+
+    class Meta:
+        verbose_name_plural = "Consumos de Tecido"
+        verbose_name = "Consumo de Tecido"
