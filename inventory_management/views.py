@@ -12,6 +12,7 @@ from reportlab.lib.pagesizes import letter
 from django.shortcuts import render
 from io import BytesIO
 from django.utils import timezone
+from decimal import Decimal
 
 
 class IndexView(TemplateView):
@@ -115,6 +116,29 @@ class ProductUnitDetailView(DetailView):
             )
             
             product_unit.location = destination
+
+        consumption = request.POST.get('consumption')
+        if consumption:
+                consumption_decimal = Decimal(consumption)
+
+                if consumption_decimal > product_unit.weight_length:
+                    return JsonResponse({'consumption': "O consumo não pode ser maior que o peso/tamanho antes da subtração."}, status=400)
+                
+                weight_length_after = product_unit.weight_length - consumption_decimal
+                if weight_length_after < 0:
+                    return JsonResponse({'consumption': "O peso/tamanho depois da subtração não pode ser negativo."}, status=400)
+                
+                try:
+                    ClothConsumption.objects.create(
+                        product_unit=product_unit,
+                        consumption=consumption_decimal,
+                        weight_length_before=product_unit.weight_length,
+                        weight_length_after=product_unit.weight_length - consumption_decimal
+                    )
+                except ValidationError as e:
+                    # Retornar mensagens de erro como uma resposta JSON
+                    return JsonResponse({'consumption': e.message}, status=400)
+
 
         product_unit.save()
         return redirect(product_unit.get_absolute_url())

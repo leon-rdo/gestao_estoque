@@ -186,10 +186,11 @@ class StockTransfer(models.Model):
 class Write_off(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
-    origin = models.TextField("Origem", blank=True, null=True)
-    destination = models.TextField("Destino", blank=True, null=True)
+    origin = models.CharField("Origem", blank=True, null=True, max_length=100)
+    destination = models.CharField("Destino", blank=True, null=True, max_length=100)
     write_off_date = models.DateField("Data de Baixa")
     observations = models.TextField("Observações", blank=True, null=True)
+    employee = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name="Funcionário")
 
 
 class Building(models.Model):
@@ -305,7 +306,6 @@ class ClothConsumption(models.Model):
         product_unit = self.product_unit
         if self.consumption > product_unit.weight_length:
             raise ValidationError(_("O consumo não pode ser maior que o peso/tamanho antes da subtração."))
-        # Verificar se o peso/tamanho depois da subtração é negativo
         if self.weight_length_after is not None and self.weight_length_after < 0:
             raise ValidationError(_("O peso/tamanho depois da subtração não pode ser negativo."))
 

@@ -144,6 +144,17 @@ class StockTransferAdmin(admin.ModelAdmin):
     class Media:
         js = ('admin/autocomplete_origin.js',)
 
+@admin.register(Write_off)
+class WriteOffAdmin(admin.ModelAdmin):
+    list_display = ('product_unit', 'write_off_date')
+    search_fields = ('product_unit__product__name', 'product_unit__location__name')
+    list_filter = ('write_off_date',)
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return self.readonly_fields + ('product_unit', 'write_off_date')
+        return self.readonly_fields
+
 class RoomInline(admin.StackedInline):
     model = Room
     
