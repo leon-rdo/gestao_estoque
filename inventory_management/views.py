@@ -12,6 +12,9 @@ from reportlab.lib.pagesizes import letter
 from django.shortcuts import render
 from io import BytesIO
 from django.utils import timezone
+from decimal import Decimal
+from django.contrib.auth.models import User
+from django.db.models import Max
 
 
 class IndexView(TemplateView):
@@ -82,7 +85,7 @@ class ProductDetailView(DetailView):
         else:
             product_units = product_units.filter(write_off=False)
         
-        total_meters = product_units.aggregate(total_meters=Sum('meters'))['total_meters']
+        total_meters = product_units.aggregate(total_meters=Sum('weight_length'))['total_meters']
         context['total_meters'] = total_meters if total_meters else 0
         
         context['product_units'] = product_units 
@@ -96,6 +99,10 @@ class ProductUnitDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
+        context['consumption'] = ClothConsumption.objects.filter(product_unit=self.get_object())
+        context['write_offs'] = Write_off.objects.filter(product_unit=self.get_object())
+        context['employees'] = User.objects.all()
+        
         return context
         
     def post(self, request, *args, **kwargs):
@@ -103,8 +110,36 @@ class ProductUnitDetailView(DetailView):
 
         if 'write_off' in request.POST:
             product_unit.write_off = True
+            employee_id = request.POST.get('employee')
+            employee = User.objects.get(pk=employee_id)
+            Write_off.objects.create(
+                product_unit=product_unit,
+                origin= product_unit.location,
+                destination= "Baixa",
+                write_off_date=timezone.now(),
+                observations= "Baixa de produto",
+                employee = employee
+            )
+            
         elif request.POST.get('back_to_stock') == 'True':
             product_unit.write_off = False
+            last_write_off = Write_off.objects.filter(product_unit=product_unit).aggregate(last_write_off_date=Max('write_off_date'))
+            last_write_off_date = last_write_off.get('last_write_off_date')
+
+            if last_write_off_date:
+                last_write_off = Write_off.objects.filter(product_unit=product_unit, write_off_date=last_write_off_date).first()
+                employee = last_write_off.employee if last_write_off.employee else None
+            else:
+                employee = None
+
+            Write_off.objects.create(
+                product_unit=product_unit,
+                origin="Baixa",
+                destination=product_unit.location,
+                write_off_date=timezone.now(),
+                observations="Retorno ao estoque",
+                employee=employee, 
+            )
         else:
             destination_id = request.POST.get('destination')
             observations = request.POST.get('observations')
@@ -121,6 +156,28 @@ class ProductUnitDetailView(DetailView):
             )
             
             product_unit.location = destination
+
+        consumption = request.POST.get('consumption')
+        if consumption:
+                consumption_decimal = Decimal(consumption)
+
+                if consumption_decimal > product_unit.weight_length:
+                    return JsonResponse({'consumption': "O consumo não pode ser maior que o peso/tamanho antes da subtração."}, status=400)
+                
+                weight_length_after = product_unit.weight_length - consumption_decimal
+                if weight_length_after < 0:
+                    return JsonResponse({'consumption': "O peso/tamanho depois da subtração não pode ser negativo."}, status=400)
+                
+                try:
+                    ClothConsumption.objects.create(
+                        product_unit=product_unit,
+                        consumption=consumption_decimal,
+                        weight_length_before=product_unit.weight_length,
+                        weight_length_after=product_unit.weight_length - consumption_decimal
+                    )
+                except ValidationError as e:
+                    return JsonResponse({'consumption': e.message}, status=400)
+
 
         product_unit.save()
         return redirect(product_unit.get_absolute_url())
@@ -150,8 +207,8 @@ class GetProductLocationView(View):
         return JsonResponse({'location': str(product_unit.location.slug)})
     
 def calculate_items_per_page(page_width, page_height, qr_size, columns):
-    available_width = page_width - 100  # Ajuste conforme necessário
-    available_height = page_height - 100  # Ajuste conforme necessário
+    available_width = page_width - 100 
+    available_height = page_height - 100  
 
     max_columns = columns
     max_rows = available_height // (qr_size + 20)
@@ -179,8 +236,16 @@ def generate_qr_codes(request):
 
                 # Gerar PDF com os códigos QR
                 local_now = timezone.localtime(timezone.now())
-                timestamp = local_now.strftime("%d/%m/%Y - %H%M%S")
-                filename = f"qr_codes_{timestamp}.pdf"
+                timestamp = local_now.strftime("%d-%m-%Y_%H%M%S")
+
+                # Obtém os nomes dos produtos
+                unique_products = set(product_unit.product.name for product_unit in queryset)
+
+# Formata os nomes dos produtos para incluí-los no nome do arquivo
+                products_str = '_'.join(unique_products)
+
+                # Concatena o carimbo de data e hora e os nomes dos produtos ao nome do arquivo
+                filename = f"qr_codes_{products_str}_{timestamp}.pdf"
 
                 response = HttpResponse(content_type='application/pdf')
                 response['Content-Disposition'] = f'attachment; filename="{filename}"'
