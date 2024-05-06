@@ -16,10 +16,8 @@
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
     function onScanSuccess(decodedText, decodedResult) {
-        var categorySlug = "categoria-exemplo";
-        var productSlug = "produto-exemplo";
 
-        var url = "/categorias/" + categorySlug + "/produto/" + productSlug + "/unidade/" + decodedText + "/";
+        var url = decodedText;
 
         window.location.href = url;
     }

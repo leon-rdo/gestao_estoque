@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% if user.is_authenticated %}
 <div class="row justify-content-center g-5 py-3">
 
     <div class="col-12 col-md-6">
@@ -28,19 +29,76 @@
                 </tr>
             </thead>
             <tbody>
-                {% for item in object.productunit_set.all %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'inventory_management:product_unit_detail' item.product.category.slug item.product.slug item.slug %}">
-                                {{ item.product.name }} - {{ item.slug }}
-                            </a>
-                        </td>
-                        <td>{{ item.location.building.name }} - {{ item.location.full_address }}</td>
-                    </tr>
+                {% for item in product_units %}
+                <tr>
+                    <td>
+                        <a href="{% url 'inventory_management:product_unit_detail' item.product.category.slug item.product.slug item.slug %}">
+                            {{ item.product.name }} - {{ item.slug }}
+                        </a>
+                    </td>
+                    {% if item.write_off %}
+                        <td>Baixado</td>
+                    {% else %}
+                        <td>{{ item.location.full_adress }}</td>
+                    {% endif %}
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
+        <div class="row justify-content-center mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1">Primeira</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Proxima</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a></li>
+                    {% endif %}
+                </ul>
+            </nav>   
+        </div> 
     </div>
+    <h4 class="d-flex justify-content-center"><strong>Total em metros: {{total_meters}}m</h4></strong>
+    <form id="filter_form" method="GET" action="">
+        <label for="write_off" class="form-label">Filtrar por Baixa</label>
+        <select name="write_off" class="form-select">
+            <option value="false">Não Baixados</option>
+            <option value="baixados">Baixados</option>
+            <option value="todos">Todos</option>
+        </select>
+        <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
+    </form>
     {% endif %}
 </div>
+{% else %}
+<div class="row justify-content-center align-items-center g-2 pb-3">
+    <div class="col-12 col-md-6">
+        <h1>{{ object.name }}</h1>
+    </div>
+    {% if object.image %}            
+    <figure class="col-12 col-md-6">
+        <img src="{{ object.image.url }}" alt="{{ object.name }}" class="img-fluid">
+        <figcaption class="figure-caption text-center">
+            <h2>Preço</h2>
+            <p class="h5">R$ {{ object.price }}</p>
+        </figcaption>
+    </figure>
+    {% endif %}
+    <div class="col-12 fs-5">
+        {{ object.description|linebreaks }}
+    </div>
+</div>
+{% endif %}
+
+
 {% endblock %}
+
