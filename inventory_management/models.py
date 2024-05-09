@@ -84,7 +84,11 @@ class Product(models.Model):
     description = models.TextField("Descrição")
     price = models.DecimalField("Preço", max_digits=10, decimal_places=2)
     measure = models.CharField("Medida", max_length=2, choices=MEASURE_CHOICES)
+    width = models.DecimalField("Largura", max_digits=10, decimal_places=2, null=True, blank=True)
+    composition = models.CharField("Composição", max_length=100, null=True, blank=True)
     image = models.ImageField("Imagem", upload_to='product_images', blank=True, null=True)
+    code = models.CharField("Código", max_length=255, null=True, blank=True)
+    ncm = models.CharField("NCM", max_length=8, null=True, blank=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     color = models.ForeignKey('inventory_management.Color', on_delete=models.CASCADE, verbose_name="Cor", blank=True, null=True, editable=False)
     pattern = models.ForeignKey('inventory_management.Pattern', on_delete=models.CASCADE, verbose_name="Estampa", blank=True, null=True, editable=False)
@@ -135,8 +139,7 @@ class ProductUnit(models.Model):
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
     weight_length = models.DecimalField("Tamanho / Peso", max_digits=10, decimal_places=2, null=False, blank=False)
-    code = models.CharField("Código", max_length=255, null=True, blank=True)
-    ncm = models.CharField("NCM", max_length=8, null=True, blank=True)
+    imcoming = models.DecimalField("Rendimento", max_digits=10, decimal_places=2, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
     modified = models.DateTimeField("Modificado", auto_now=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
@@ -149,7 +152,7 @@ class ProductUnit(models.Model):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
         for i in range(1, self.quantity):
-            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, ncm=self.ncm)
+            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, imcoming=self.imcoming, write_off=self.write_off, created_by=self.created_by, updated_by=self.updated_by)
 
         self.__class__.objects.filter(id=self.id).update(quantity=1)
 
