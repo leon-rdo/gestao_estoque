@@ -211,9 +211,9 @@ class Write_off(models.Model):
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
     origin = models.CharField("Origem", blank=True, null=True, max_length=100)
     destination = models.CharField("Destino", blank=True, null=True, max_length=100)
-    write_off_date = models.DateTimeField("Data de Baixa")
+    write_off_date = models.DateTimeField("Data de Baixa", auto_now_add=True)
     observations = models.TextField("Observações", blank=True, null=True)
-    employee = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name="Funcionário", blank=True, null=True)
+    employee = models.ForeignKey('inventory_management.Employee', on_delete=models.CASCADE, verbose_name="Funcionário", blank=True, null=True)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='writeoff_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='writeoff_updated_by', null=True, editable=False)
@@ -363,3 +363,43 @@ class ClothConsumption(models.Model):
     class Meta:
         verbose_name_plural = "Consumos de Tecido"
         verbose_name = "Consumo de Tecido"
+
+class Employee(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField("Nome da Estampa", max_length=100)
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='employee_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='employee_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(Pattern, self).save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Funcionários"
+        verbose_name = "Funcionário"
+
+class Destinations(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField("Nome da Estampa", max_length=100)
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='destinations_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='destinations_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(Pattern, self).save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Destinos"
+        verbose_name = "Destino"
