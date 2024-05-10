@@ -80,25 +80,42 @@
     {% endif %}
 </div>
 {% else %}
-<div class="row justify-content-center align-items-center g-2 pb-3">
-    <div class="col-12 col-md-6">
-        <h1>{{ object.name }}</h1>
-    </div>
-    {% if object.image %}            
-    <figure class="col-12 col-md-6">
-        <img src="{{ object.image.url }}" alt="{{ object.name }}" class="img-fluid">
-        <figcaption class="figure-caption text-center">
-            <h2>Preço</h2>
-            <p class="h5">R$ {{ object.price }}</p>
-        </figcaption>
-    </figure>
-    {% endif %}
-    <div class="col-12 fs-5">
-        {{ object.description|linebreaks }}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <h1 class="text-uppercase">{{ object.name }}</h1>
+                </div>
+                <div class="col-md-12 fs-5">
+                    {{ object.description|linebreaks }}
+                </div>
+                <div class="col-md-12">
+                    <h2>Largura</h2>
+                    <p>{{ object.width }}m</p>
+                </div>
+                <div class="col-md-12">
+                    <h2>Composição</h2>
+                    <p>{{ object.composition }}</p>
+                </div>
+                <div class="col-md-12">
+                    <h3>Unidade de medida: {{ object.measure }}</h3>
+                </div>
+                <div class="col-md-12 mt-2">
+                    <h2>Preço</h2>
+                    <p class="h5">R$ {{ object.price }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            {% if object.image %}            
+            <figure>
+                <img src="{{ object.image.url }}" alt="{{ object.name }}" class="img-fluid">
+            </figure>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endif %}
-
-
 {% endblock %}
 
