@@ -191,24 +191,39 @@
     {% endif %}
 </div>
 {% else %}
-<div class="container pb-5">
-    <div class="row justify-content-center align-items-center">
-        <div class="col-12 col-md-6">
-            <h1 class="mb-4">{{ object.product }}</h1>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <h1 class="text-uppercase">{{ object.product.name }}</h1>
+                </div>
+                <div class="col-md-12 fs-5">
+                    {{ object.product.description|linebreaks }}
+                </div>
+                <div class="col-md-12">
+                    <h2>Largura</h2>
+                    <p>{{ object.product.width }}m</p>
+                </div>
+                <div class="col-md-12">
+                    <h2>Composição</h2>
+                    <p>{{ object.product.composition }}</p>
+                </div>
+                <div class="col-md-12">
+                    <h3>Unidade de medida: {{ object.product.measure }}</h3>
+                </div>
+                <div class="col-md-12 mt-2">
+                    <h2>Preço</h2>
+                    <p class="h5">R$ {{ object.product.price }}</p>
+                </div>
+            </div>
         </div>
-        {% if object.product.image %}
-        <div class="col-12 col-md-6">
-            <img src="{{ object.product.image.url }}" alt="{{ object.product.name }}" class="img-fluid">
-            <figcaption class="figure-caption text-center">
-                <h2>Preço</h2>
-                <p class="h5">R$ {{ object.product.price }}</p>
-            </figcaption>
-        </div>
-        {% endif %}
-    </div>
-    <div class="row justify-content-center align-items-center mt-4">
-        <div class="col-12 fs-5">
-            {{ object.product.description|linebreaks }}
+        <div class="col-md-6">
+            {% if object.product.image %}            
+            <figure>
+                <img src="{{ object.product.image.url }}" alt="{{ object.product.name }}" class="img-fluid">
+            </figure>
+            {% endif %}
         </div>
     </div>
 </div>
