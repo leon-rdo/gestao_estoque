@@ -131,11 +131,14 @@ class Product(models.Model):
         return reverse('inventory_management:product_detail', kwargs={'category_slug':self.category.slug, 'slug': self.slug})
     
 
+def get_default_location():
+    return Destinations.objects.get_or_create(name="Depósito")[0]
 
 class ProductUnit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
-    location = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Localização")
+    location = models.ForeignKey('inventory_management.Destinations',default=get_default_location, on_delete=models.CASCADE, verbose_name="Localização")
+    shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Gaveta", blank=True, null=True)
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
     weight_length = models.DecimalField("Tamanho / Peso", max_digits=10, decimal_places=2, null=False, blank=False)
@@ -147,6 +150,8 @@ class ProductUnit(models.Model):
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='productunit_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
@@ -366,7 +371,7 @@ class ClothConsumption(models.Model):
 
 class Employee(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField("Nome da Estampa", max_length=100)
+    name = models.CharField("Nome do Funcionário", max_length=100)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='employee_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
@@ -375,7 +380,7 @@ class Employee(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
-        super(Pattern, self).save(*args, **kwargs)
+        super(Employee, self).save(*args, **kwargs)
     
     def __str__(self):
         return self.name
@@ -386,7 +391,7 @@ class Employee(models.Model):
 
 class Destinations(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField("Nome da Estampa", max_length=100)
+    name = models.CharField("Nome do Local", max_length=100)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='destinations_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
@@ -395,7 +400,7 @@ class Destinations(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
-        super(Pattern, self).save(*args, **kwargs)
+        super(Destinations, self).save(*args, **kwargs)
     
     def __str__(self):
         return self.name

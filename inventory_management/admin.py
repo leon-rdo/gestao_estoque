@@ -85,7 +85,12 @@ class ProductUnitAdmin(admin.ModelAdmin):
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline]
 
-    
+    class Media:
+        js = (
+            'https://code.jquery.com/jquery-3.6.0.min.js',
+            'admin/product_unit_admin.js',
+        )
+
     def weight_length_with_measure(self, obj):
         product_measure = obj.product.get_measure_display()
         return f"{obj. weight_length} {product_measure}"
@@ -239,3 +244,28 @@ class ColorAdmin(admin.ModelAdmin):
 @admin.register(Pattern)
 class PatternAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_by', 'created_at', 'updated_by', 'updated_at')
+    search_fields = ('name',)
+    list_filter = ('created_at', 'updated_at')
+
+    def save_model(self, request, obj, form, change):
+        if not change:  
+            obj.created_by = request.user
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(Destinations)
+class DestinationsAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_by', 'created_at', 'updated_by', 'updated_at')
+    search_fields = ('name',)
+    list_filter = ('created_at', 'updated_at')
+
+    def save_model(self, request, obj, form, change):
+        if not change:  
+            obj.created_by = request.user
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
