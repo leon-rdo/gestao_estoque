@@ -108,7 +108,7 @@ class ProductUnitDetailView(DetailView):
         context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
         context['consumption'] = ClothConsumption.objects.filter(product_unit=self.get_object())
         context['write_offs'] = Write_off.objects.filter(product_unit=self.get_object())
-        context['employees'] = User.objects.all()
+        context['employees'] = Employee.objects.all()
         
         return context
         
@@ -118,7 +118,8 @@ class ProductUnitDetailView(DetailView):
         if 'write_off' in request.POST:
             product_unit.write_off = True
             employee_id = request.POST.get('employee')
-            employee = User.objects.get(pk=employee_id)
+            employee = Employee.objects.get(pk=employee_id)
+            print(employee)
             Write_off.objects.create(
                 product_unit=product_unit,
                 origin= product_unit.location,

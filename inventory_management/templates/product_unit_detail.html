@@ -97,14 +97,14 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    Tem certeza de que deseja retornar este item ao estoque?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <p>Tem certeza de que deseja retornar este item ao estoque?</p>
                     <form id="back_to_stock_form" method="post" action="">
                         {% csrf_token %}
                         <input type="hidden" name="back_to_stock" value="True">
-                        <button type="submit" class="btn btn-success">Confirmar Retorno ao Estoque</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Confirmar Retorno ao Estoque</button>
                     </form>
                 </div>
             </div>
@@ -117,40 +117,38 @@
                 <button type="button" class="btn btn-danger flex-fill w-100" data-toggle="modal" data-target="#confirmationModal">
                     <i class="bi bi-archive"></i> Dar baixa
                 </button>
+        
                 <div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="exampleModalLabel">Confirmação de Baixa</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <p>Tem certeza de que deseja dar baixa neste item?</p>
-                                <form id="write_off_form" method="post" action="">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="write_off" value="True">
-                                    <div class="form-group">
-                                        <label for="consumption">Consumo:</label>
-                                        <input type="number" class="form-control" id="consumption" name="consumption" placeholder="Insira o consumo do material">
-                                        <span class="text-danger consumption-error"></span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="employee" class="form-label">Responsável:</label>
-                                        <select name="employee" id="employee" class="form-select">
-                                            {% for employee in employees %}
-                                            <option value="{{ employee.id }}">{{ employee }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-danger">Confirmar Baixa</button>
-                            </div>
-                        </form>
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="exampleModalLabel">Confirmação de Baixa</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                          </button>
                         </div>
+                        <div class="modal-body">
+                          Tem certeza de que deseja dar baixa neste item?
+                          <br>
+                          <div class="form-group">
+                            <label for="employee" class="form-label">Responsável:</label>
+                            <form id="write_off_form" method="post" action="">
+                                {% csrf_token %}
+                                <select name="employee" id="employee" class="form-select">
+                                  {% for employee in employees %}
+                                  <option value="{{ employee.id }}">{{ employee }}</option>
+                                  {% endfor %}
+                              </select>
+                                <input type="hidden" name="write_off" value="True">
+                           
+                        </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                          <button type="submit" class="btn btn-danger">Confirmar Baixa</button>
+                            </form>
+                        </div>
+                      </div>
                     </div>
                 </div>  
             </div>
@@ -248,34 +246,7 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    $(document).ready(function(){
-        $('#write_off_form').submit(function(e){
-            e.preventDefault();
-            var form = $(this);
-            $.ajax({
-                type: form.attr('method'),
-                url: form.attr('action'),
-                data: form.serialize(),
-                success: function(data){
-                    // Sucesso ao enviar o formulário
-                    // Recarregar a página para refletir as alterações
-                    window.location.reload();
-                },
-                error: function(xhr, textStatus, errorThrown){
-                    // Erro ao enviar o formulário
-                    if (xhr.status === 400) {
-                        var errors = xhr.responseJSON;
-                        // Limpar mensagens de erro anteriores
-                        form.find('.consumption-error').empty();
-                        // Exibir mensagens de erro
-                        if (errors.hasOwnProperty('consumption')) {
-                            form.find('.consumption-error').text(errors.consumption);
-                        }
-                    }
-                }
-            });
-        });
-    });
+   
 </script>
 
 {% endblock extra_scripts %}
