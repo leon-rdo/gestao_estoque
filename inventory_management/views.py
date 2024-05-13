@@ -105,8 +105,9 @@ class ProductUnitDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['transfer_areas'] = Destinations.objects.all()
         context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
-        context['consumption'] = ClothConsumption.objects.filter(product_unit=self.get_object())
+        context['consumptions'] = ClothConsumption.objects.filter(product_unit=self.get_object())
         context['write_offs'] = Write_off.objects.filter(product_unit=self.get_object())
         context['employees'] = Employee.objects.all()
         
@@ -119,15 +120,25 @@ class ProductUnitDetailView(DetailView):
             product_unit.write_off = True
             employee_id = request.POST.get('employee')
             employee = Employee.objects.get(pk=employee_id)
-            print(employee)
-            Write_off.objects.create(
-                product_unit=product_unit,
-                origin= product_unit.location,
-                destination= "Baixa",
-                write_off_date=timezone.now(),
-                observations= "Baixa de produto",
-                employee = employee
-            )
+            
+            if product_unit.shelf:
+                Write_off.objects.create(
+                    product_unit=product_unit,
+                    origin= product_unit.shelf,
+                    transfer_area= Destinations.objects.get_or_create(name="Baixa")[0],
+                    write_off_date=timezone.now(),
+                    observations= "Baixa de produto",
+                    employee = employee
+                )
+            else:
+                Write_off.objects.create(
+                    product_unit=product_unit,
+                    origin= product_unit.location,
+                    transfer_area= Destinations.objects.get_or_create(name="Baixa")[0],
+                    write_off_date=timezone.now(),
+                    observations= "Baixa de produto",
+                    employee = employee
+                )    
             
         elif request.POST.get('back_to_stock') == 'True':
             product_unit.write_off = False
@@ -140,14 +151,36 @@ class ProductUnitDetailView(DetailView):
             else:
                 employee = None
 
-            Write_off.objects.create(
-                product_unit=product_unit,
-                origin="Baixa",
-                destination=product_unit.location,
-                write_off_date=timezone.now(),
-                observations="Retorno ao estoque",
-                employee=employee, 
-            )
+            location_id = request.POST.get('location')
+            location = Destinations.objects.get(pk=location_id)
+            shelf_id = request.POST.get('shelf')
+
+            if shelf_id != None:
+                shelf = Shelf.objects.get(pk=shelf_id)
+
+            
+                Write_off.objects.create(
+                        product_unit=product_unit,
+                        origin=Destinations.objects.get_or_create(name="Baixa")[0],
+                        transfer_area=location,
+                        destination=shelf,
+                        write_off_date=timezone.now(),
+                        observations="Retorno ao estoque",
+                        employee=employee, 
+                )
+                product_unit.location = location
+                product_unit.shelf = shelf
+            else:
+                Write_off.objects.create(
+                    product_unit=product_unit,
+                    origin=Destinations.objects.get_or_create(name="Baixa")[0],
+                    transfer_area=location,
+                    write_off_date=timezone.now(),
+                    observations="Retorno ao estoque",
+                    employee=employee, 
+                )
+                product_unit.location = location
+                product_unit.shelf = None
         else:
             destination_id = request.POST.get('destination')
             observations = request.POST.get('observations')
@@ -181,7 +214,7 @@ class ProductUnitDetailView(DetailView):
                         product_unit=product_unit,
                         consumption=consumption_decimal,
                         weight_length_before=product_unit.weight_length,
-                        weight_length_after=product_unit.weight_length - consumption_decimal
+                        weight_length_after= consumption_decimal
                     )
                 except ValidationError as e:
                     return JsonResponse({'consumption': e.message}, status=400)

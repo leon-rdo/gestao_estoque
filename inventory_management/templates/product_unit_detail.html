@@ -38,7 +38,11 @@
                     <tr>
                         <td>{{ write_off.write_off_date }}</td>
                         <td>{{ write_off.origin }}</td>
+                        {% if write_off.destination %}
                         <td>{{ write_off.destination }}</td>
+                        {% else %}
+                        <td>{{ write_off.transfer_area}}</td>
+                        {% endif %}
                         <td>{{ write_off.observations }}</td>
                         <td>{{ write_off.employee }}</td>
                     </tr>
@@ -101,14 +105,36 @@
                     <form id="back_to_stock_form" method="post" action="">
                         {% csrf_token %}
                         <input type="hidden" name="back_to_stock" value="True">
+                        <div class="form-group">
+                            <label for="consumption">Consumo:</label>
+                            <input type="number" class="form-control" id="consumption" name="consumption" placeholder="Insira o consumo do material">
+                            <span class="text-danger consumption-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="location">Localização:</label>
+                            <select name="location" id="location" class="form-select" onchange="toggleShelfVisibility()">
+                                {% for transfer_area in transfer_areas %}
+                                <option value="{{ transfer_area.id }}">{{ transfer_area }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" id="shelfGroup" style="display: none;">
+                            <label for="shelf">Gaveta:</label>
+                            <select name="shelf" id="shelf" class="form-select">
+                                {% for shelf in shelves %}
+                                <option value="{{ shelf.id }}">{{ shelf }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success">Confirmar Retorno ao Estoque</button>
-                    </form>
+                    <button type="submit" class="btn btn-success" onclick="submitForm()">Confirmar Retorno ao Estoque</button>
                 </div>
+                </form>
             </div>
         </div>
+        
     </div>
     
     {% else %}
@@ -246,7 +272,26 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-   
+    $(document).ready(function() {
+    function toggleShelfField() {
+        var locationText = $('#location option:selected').text().trim();
+        if (locationText === "Loja") {
+            $('#shelfGroup').show(); 
+        } else {
+            $('#shelfGroup').hide();
+            $('#shelf').val('');
+        }
+    }
+
+  
+    $('#location').change(function() {
+        toggleShelfField();
+    });
+
+    toggleShelfField();
+});
+console.log( $('#shelf').val)
+console.log( $('#location').val)
 </script>
 
 {% endblock extra_scripts %}
