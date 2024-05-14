@@ -10,3 +10,4 @@ qrcode==7.4.2
 reportlab==4.1.0
 sqlparse==0.4.4
 typing_extensions==4.11.0
+gunicorn==21.2.0
