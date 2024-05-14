@@ -74,6 +74,9 @@
                     </ul>
                 </li> -->
                 <li><a class="nav-link" href="{% url 'inventory_management:scan_qr' %}">Escanear QR Code</a></li>
+                {% if user.is_authenticated %}
+                    <li><a class="nav-link" href="{% url 'inventory_management:workspace' %}">Área de Trabalho</a></li>
+                {% endif %}
                 {% if user.is_staff %}
                     <li><a class="nav-link" href="{% url 'admin:index' %}">Administração</a></li>
                 {% endif %}
