@@ -4,8 +4,11 @@ from django.urls import reverse
 from django.urls import path
 
 from django.shortcuts import redirect
-#
-
+from django.utils.safestring import mark_safe
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import base64
+from io import BytesIO
+import qrcode
 from django.contrib import admin
 from .models import *
 
@@ -74,16 +77,22 @@ write_on_products.short_description = "Retornar ao estoque os produtos seleciona
 
 class ClothConsumptionInline(admin.TabularInline):
     model = ClothConsumption
-    readonly_fields = ('weight_length_before',)
+    readonly_fields = ('remainder','weight_length_before')
     extra = 1
 
+class StockTransferInline(admin.TabularInline):
+    model = StockTransfer
+    readonly_fields = ('origin','shelf_origin','transfer_area', 'destination', 'transfer_date', 'observations')
+    extra = 0
+
+    
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location', 'weight_length_with_measure', 'purchase_date', 'write_off', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id', 'code')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
     actions = [download_qr_codes, write_off_products, write_on_products]
-    inlines = [ClothConsumptionInline]
+    inlines = [ClothConsumptionInline, StockTransferInline]
 
     class Media:
         js = (
@@ -93,9 +102,20 @@ class ProductUnitAdmin(admin.ModelAdmin):
 
     def weight_length_with_measure(self, obj):
         product_measure = obj.product.get_measure_display()
-        return f"{obj. weight_length} {product_measure}"
+        return f"{obj.weight_length} {product_measure}"
     weight_length_with_measure.short_description = 'Tamanho / Peso'
-    
+
+    def qr_code_image(self, obj):
+        if obj:
+            absolute_url = f"http://localhost:8000{obj.get_absolute_url()}"
+            qr = qrcode.make(absolute_url)
+            qr_io = BytesIO()
+            qr.save(qr_io, format='PNG')
+            qr_io.seek(0)
+            qr_base64 = base64.b64encode(qr_io.getvalue()).decode('utf-8')
+            return mark_safe(f'<img src="data:image/png;base64,{qr_base64}" width="250" height="250"/>')
+        return "No QR code available"
+    qr_code_image.short_description = 'QR Code'
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -108,7 +128,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ('location',)
+            return self.readonly_fields + ('location', 'qr_code_image')
         return self.readonly_fields
 
     def get_urls(self):

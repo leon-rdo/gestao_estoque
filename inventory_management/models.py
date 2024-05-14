@@ -180,7 +180,9 @@ class ProductUnit(models.Model):
 class StockTransfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
-    origin = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
+    origin = models.ForeignKey('inventory_management.Destinations', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
+    shelf_origin = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="shelf_origin", verbose_name="Gaveta de origem", blank=True, null=True)
+    transfer_area = models.ForeignKey('inventory_management.Destinations', on_delete=models.CASCADE, verbose_name="Área de Transferência")
     destination = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
     transfer_date = models.DateField("Data da Transferência")
     observations = models.TextField("Observações", blank=True, null=True)
@@ -190,19 +192,20 @@ class StockTransfer(models.Model):
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
-        if self.origin == self.destination:
+        if self.shelf_origin == self.destination:
             raise ValidationError("Origem e destino não podem ser iguais.")
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
-        if self.product_unit.location != self.origin:
+        if self.product_unit.shelf != self.shelf_origin:
             raise ValidationError("A unidade de produto não está na origem.")
         
-        self.product_unit.location = self.destination
+        self.product_unit.location = self.transfer_area
+        self.product_unit.shelf = self.destination
         self.product_unit.save()
         super(StockTransfer, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product_unit.product.name} - {self.origin.hall.room.building} ( {self.origin}) -> {self.destination.hall.room.building} ({self.destination})"
+        return f"{self.product_unit.product.name} - {self.shelf_origin.hall.room.building} ( {self.origin}) -> {self.destination.hall.room.building} ({self.destination})"
 
     class Meta:
         verbose_name_plural = "Transferências de Estoque"

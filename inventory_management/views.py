@@ -274,17 +274,16 @@ def generate_qr_codes(request):
                     qr = qrcode.make(data, box_size=get_qr_size(size_preset))
                     qr_codes.append(qr)
 
-                # Gerar PDF com os códigos QR
+                
                 local_now = timezone.localtime(timezone.now())
                 timestamp = local_now.strftime("%d-%m-%Y_%H%M%S")
 
-                # Obtém os nomes dos produtos
+               
                 unique_products = set(product_unit.product.name for product_unit in queryset)
 
-# Formata os nomes dos produtos para incluí-los no nome do arquivo
+
                 products_str = '_'.join(unique_products)
 
-                # Concatena o carimbo de data e hora e os nomes dos produtos ao nome do arquivo
                 filename = f"qr_codes_{products_str}_{timestamp}.pdf"
 
                 response = HttpResponse(content_type='application/pdf')
@@ -293,7 +292,7 @@ def generate_qr_codes(request):
                 c = canvas.Canvas(buffer, pagesize=letter)
 
                 x_offset = 50
-                qr_size = get_qr_size(size_preset)  # Tamanho do código QR em pixels
+                qr_size = get_qr_size(size_preset) 
                 page_width, page_height = letter
                 if size_preset == 'pequeno':
                     columns = 4
@@ -305,9 +304,9 @@ def generate_qr_codes(request):
                 items_per_page = calculate_items_per_page(page_width, page_height, qr_size, columns)
 
                 for idx, qr in enumerate(qr_codes):
-                    row = idx // columns  # Linha dentro da página
-                    col = idx % columns  # Coluna dentro da página
-                    page_idx = idx // items_per_page  # Índice da página atual
+                    row = idx // columns  
+                    col = idx % columns  
+                    page_idx = idx // items_per_page 
                    
                     if size_preset == 'pequeno':
                         y_coordinate = page_height - 200 - (row % (items_per_page // columns)) * (qr_size + 20)
@@ -319,13 +318,13 @@ def generate_qr_codes(request):
                         y_coordinate = page_height - 250 - (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 50 + x_offset + col * (qr_size + 20)
 
-                    # Verificar se é necessário iniciar uma nova página
+                    
                     if idx > 0 and idx % items_per_page == 0:
                         c.showPage()
 
                     c.drawInlineImage(qr, x_coordinate, y_coordinate, width=qr_size, height=qr_size)
 
-                c.showPage()  # Garantir que a última página seja exibida
+                c.showPage()
 
                 c.save()
                 pdf_data = buffer.getvalue()
@@ -339,9 +338,9 @@ def generate_qr_codes(request):
 
 def get_qr_size(size_preset):
     if size_preset == 'pequeno':
-        return 100  # Ajuste o valor conforme necessário
+        return 100  
     elif size_preset == 'medio':
-        return 150  # Ajuste o valor conforme necessário
+        return 150  
     elif size_preset == 'grande':
-        return 200  # Ajuste o valor conforme necessário
+        return 200  
 
