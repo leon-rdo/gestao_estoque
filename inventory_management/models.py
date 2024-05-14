@@ -335,9 +335,8 @@ class Shelf (models.Model):
 
 class ClothConsumption(models.Model):
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
-    consumption = models.DecimalField("Consumo", max_digits=10, decimal_places=2)
     weight_length_before = models.DecimalField("Tamanho / Peso Antes", max_digits=10, decimal_places=2, blank=True, null=True)
-    weight_length_after = models.DecimalField("Tamanho / Peso Depois", max_digits=10, decimal_places=2, blank=True, null=True)
+    remainder = models.DecimalField("Tamanho / Peso Atual", max_digits=10, decimal_places=2, blank=True, null=True)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='cloth_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='cloth_updated_by', null=True, editable=False)
@@ -347,18 +346,18 @@ class ClothConsumption(models.Model):
         product_unit = self.product_unit
         self.weight_length_before = product_unit.weight_length
 
-        product_unit.weight_length -= self.consumption
+        product_unit.weight_length = self.remainder
         product_unit.save()
 
-        self.weight_length_after = product_unit.weight_length
+        self.remainder = product_unit.weight_length
 
         super().save(*args, **kwargs)
 
     def clean(self):
         product_unit = self.product_unit
-        if self.consumption > product_unit.weight_length:
+        if self.remainder > product_unit.weight_length:
             raise ValidationError(_("O consumo não pode ser maior que o peso/tamanho antes da subtração."))
-        if self.weight_length_after is not None and self.weight_length_after < 0:
+        if self.remainder is not None and self.remainder < 0:
             raise ValidationError(_("O peso/tamanho depois da subtração não pode ser negativo."))
 
         super().clean()

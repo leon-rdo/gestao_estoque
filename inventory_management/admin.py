@@ -74,7 +74,7 @@ write_on_products.short_description = "Retornar ao estoque os produtos seleciona
 
 class ClothConsumptionInline(admin.TabularInline):
     model = ClothConsumption
-    readonly_fields = ('weight_length_before','weight_length_after',)
+    readonly_fields = ('weight_length_before',)
     extra = 1
 
 @admin.register(ProductUnit)

@@ -60,17 +60,15 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th scope="col">Consumo</th>
+                    <th scope="col">Tamanho / Peso Atual</th>
                     <th scope="col">Tamanho / Peso Antes</th>
-                    <th scope="col">Tamanho / Peso Depois</th>
                 </tr>
             </thead>
             <tbody>
                 {% for consumption in consumptions %}
                 <tr>
-                    <td>{{ consumption.consumption }}</td>
+                    <td>{{ consumption.remainder }}</td>
                     <td>{{ consumption.weight_length_before }}</td>
-                    <td>{{ consumption.weight_length_after }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -106,9 +104,9 @@
                         {% csrf_token %}
                         <input type="hidden" name="back_to_stock" value="True">
                         <div class="form-group">
-                            <label for="consumption">Consumo:</label>
-                            <input type="number" class="form-control" id="consumption" name="consumption" placeholder="Insira o consumo do material">
-                            <span class="text-danger consumption-error"></span>
+                            <label for="consumption">Quantidade de material restante:</label>
+                            <input type="number" class="form-control" id="remainder" name="remainder" placeholder="Insira quanto material sobrou">
+                            <span class="text-danger remainder-error"></span>
                         </div>
                         <div class="form-group">
                             <label for="location">Localização:</label>
@@ -129,7 +127,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success" onclick="submitForm()">Confirmar Retorno ao Estoque</button>
+                    <button id="submit_btn" class="btn btn-success">Confirmar Retorno ao Estoque</button>
                 </div>
                 </form>
             </div>
@@ -271,6 +269,38 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function(){
+        $('#submit_btn').click(function(e){
+            e.preventDefault();
+            var form = $('#back_to_stock_form');
+            $.ajax({
+                type: form.attr('method'),
+                url: form.attr('action'),
+                data: form.serialize(),
+                success: function(data){
+                    // Sucesso ao enviar o formulário
+                    // Recarregar a página para refletir as alterações
+                    window.location.reload();
+                },
+                error: function(xhr, textStatus, errorThrown){
+                    // Erro ao enviar o formulário
+                    if (xhr.status === 400) {
+                        var errors = xhr.responseJSON;
+                        // Limpar mensagens de erro anteriores
+                        form.find('.remainder-error').empty();
+                        // Exibir mensagens de erro
+                        if (errors.hasOwnProperty('remainder')) {
+                            form.find('.remainder-error').text(errors.remainder);
+                        }
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+
 <script>
     $(document).ready(function() {
     function toggleShelfField() {
