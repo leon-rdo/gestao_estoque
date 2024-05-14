@@ -5,30 +5,6 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 import uuid 
 
-class Category(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField("Nome da Categoria", max_length=100)
-    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
-
-    def save(self, *args, **kwargs):
-        self.slug = slugify(self.name)
-        super(Category, self).save(*args, **kwargs)
-
-    @property
-    def quantity(self):
-        return self.product_set.count()
-    quantity.fget.short_description = "Quantidade"
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name_plural = "Categorias"
-        verbose_name = "Categoria"
-
-    def get_absolute_url(self):
-        return reverse('inventory_management:category_items', kwargs={'slug': self.slug})
-
 class Color(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Cor", max_length=100)
@@ -79,7 +55,6 @@ class Product(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    category = models.ForeignKey('inventory_management.Category', on_delete=models.CASCADE, verbose_name="Categoria")
     name = models.CharField("Nome do Produto", max_length=100)
     description = models.TextField("Descrição")
     price = models.DecimalField("Preço", max_digits=10, decimal_places=2)
@@ -128,7 +103,7 @@ class Product(models.Model):
         verbose_name = "Produto"
     
     def get_absolute_url(self):
-        return reverse('inventory_management:product_detail', kwargs={'category_slug':self.category.slug, 'slug': self.slug})
+        return reverse('inventory_management:product_detail', kwargs={'slug': self.slug})
     
 
 def get_default_location():
@@ -157,7 +132,7 @@ class ProductUnit(models.Model):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
         for i in range(1, self.quantity):
-            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, imcoming=self.imcoming, write_off=self.write_off, created_by=self.created_by, updated_by=self.updated_by)
+            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, imcoming=self.imcoming, write_off=self.write_off, created_by=self.created_by, updated_by=self.updated_by, shelf=self.shelf)
 
         self.__class__.objects.filter(id=self.id).update(quantity=1)
 
@@ -174,7 +149,7 @@ class ProductUnit(models.Model):
         ordering = ['write_off', 'purchase_date', 'product']
 
     def get_absolute_url(self):
-        return reverse('inventory_management:product_unit_detail', kwargs={'category_slug':self.product.category.slug, 'product_slug':self.product.slug, 'slug': self.slug})
+        return reverse('inventory_management:product_unit_detail', kwargs={'product_slug':self.product.slug, 'slug': self.slug})
 
 
 class StockTransfer(models.Model):
@@ -212,7 +187,7 @@ class StockTransfer(models.Model):
         verbose_name = "Transferência de Estoque"
 
     def get_absolute_url(self):
-        return reverse('inventory_management:product_unit_detail', kwargs={'category_slug':self.product_unit.product.category.slug, 'product_slug':self.product_unit.product.slug, 'slug': self.product_unit.slug})
+        return reverse('inventory_management:product_unit_detail', kwargs={'product_slug':self.product_unit.product.slug, 'slug': self.product_unit.slug})
 
 class Write_off(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -389,8 +364,8 @@ class Employee(models.Model):
         return self.name
 
     class Meta:
-        verbose_name_plural = "Funcionários"
-        verbose_name = "Funcionário"
+        verbose_name_plural = "Destinos de Baixa"
+        verbose_name = "Destino de Baixa"
 
 class Destinations(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -411,3 +386,16 @@ class Destinations(models.Model):
     class Meta:
         verbose_name_plural = "Destinos"
         verbose_name = "Destino"
+        
+
+class WorkSpace(models.Model):
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, verbose_name="Usuário")
+    product = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
+    
+    def __str__(self):
+        return f'{self.user} - {self.product}'
+    
+    class Meta:
+        verbose_name_plural = "Áreas de Trabalho"
+        verbose_name = "Área de Trabalho"
+    

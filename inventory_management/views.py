@@ -16,56 +16,28 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.db.models import Max, Sum
 from django.core.paginator import Paginator, PageNotAnInteger
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.http import HttpResponseRedirect
 
 
 class IndexView(TemplateView):
     template_name = 'index.html'
-
-
-class CategoryListView(ListView):
-    model = Category
-    template_name = 'category_list.html'
-    context_object_name = 'categories'
-    paginate_by = 6
     
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        filtro = self.request.GET.get('search')
-
-        if filtro:
-            queryset = queryset.filter(name__icontains=filtro)
-            
-        return queryset
-
-
-class CategoryItemsView(ListView):
-    model = Product
-    template_name = 'category_items.html'
-    paginate_by = 6
-    context_object_name = 'products'
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        filtro = self.request.GET.get('search')
-        category = Category.objects.get(slug=self.kwargs['slug'])
-
-        if filtro:
-            queryset = queryset.filter(name__icontains=filtro, category=category)
-        else:
-            queryset = queryset.filter(category=category)
-            
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['category'] = Category.objects.get(slug=self.kwargs['slug'])
-        return context
-
 
 class ProductListView(ListView):
     model = Product
     template_name = 'product_list.html'
     context_object_name = 'products'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(name__startswith=search)
+        return queryset.order_by('name')
+    
 
 
 class ProductDetailView(DetailView):
@@ -77,6 +49,10 @@ class ProductDetailView(DetailView):
         product = self.get_object()
         write_off = self.request.GET.get('write_off')
         product_units = product.productunit_set.all() 
+        search = self.request.GET.get('search')
+        
+        if search:
+            product_units = product_units.filter(id__contains=search)
         
         if write_off == 'baixados':
             product_units = product_units.filter(write_off=True)
@@ -193,7 +169,7 @@ class ProductUnitDetailView(DetailView):
                 origin=origin,
                 destination=destination,
                 transfer_date=date.today(),
-                observations=observations
+                observations=observations,
             )
             
             product_unit.location = destination
@@ -344,3 +320,37 @@ def get_qr_size(size_preset):
     elif size_preset == 'grande':
         return 200  
 
+@method_decorator(login_required, name='dispatch')
+class WorkSpaceView(ListView):
+    template_name = 'workspace.html'
+    model = WorkSpace
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(user=self.request.user)
+        
+    def post(self, request, *args, **kwargs):
+        if 'clean' in request.POST:
+            WorkSpace.objects.filter(user=request.user).delete()
+            return HttpResponseRedirect(reverse('inventory_management:workspace'))
+        
+        product_id = request.POST.get('product_id')
+
+        if not product_id:
+            return JsonResponse({'error': 'ID de produto inválido'}, status=400)
+        
+        if product_id:
+            try:
+                product = ProductUnit.objects.get(pk=product_id)
+                if WorkSpace.objects.filter(user=request.user, product=product).exists():
+                    return JsonResponse({'error': 'Produto ja adicionado a area de trabalho', 'reload' : True}, status=400)
+                else:
+                    WorkSpace.objects.create(
+                        user=request.user,
+                        product=product
+                    )
+                    return JsonResponse({'success': 'Produto adicionado à área de trabalho', 'reload': True}, status=200)
+            except ProductUnit.DoesNotExist:
+                return JsonResponse({'error': 'Produto nao encontrado'}, status=400)
+            
+        

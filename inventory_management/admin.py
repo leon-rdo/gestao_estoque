@@ -16,17 +16,12 @@ admin.site.site_header = 'Gestão de Estoque'
 admin.site.site_title = 'Administração'
 admin.site.index_title = 'Gestão de Estoque'
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'quantity')
-    search_fields = ('name',)
-
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'quantity', 'custom_display', 'created_by', 'created_at', 'updated_by', 'updated_at')
+    list_display = ('name', 'quantity', 'custom_display', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('name',)
-    list_filter = ('category',)
+    
     
     def custom_display(self, obj):
         if "liso" in obj.name.lower():
@@ -88,8 +83,8 @@ class StockTransferInline(admin.TabularInline):
     
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'location', 'weight_length_with_measure', 'purchase_date', 'write_off', "created_by", "created_at", "updated_by", "updated_at")
-    search_fields = ('product__name', 'location__name', 'id', 'code')
+    list_display = ('product', 'location', 'weight_length_with_measure', 'purchase_date', "created_by", "created_at", "updated_by", "updated_at")
+    search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
@@ -289,3 +284,7 @@ class DestinationsAdmin(admin.ModelAdmin):
             obj.created_by = request.user
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+        
+@admin.register(WorkSpace)
+class WorkSpaceAdmin(admin.ModelAdmin):
+    pass
