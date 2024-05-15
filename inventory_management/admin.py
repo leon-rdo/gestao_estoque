@@ -185,7 +185,7 @@ class StockTransferAdmin(admin.ModelAdmin):
 
 @admin.register(Write_off)
 class WriteOffAdmin(admin.ModelAdmin):
-    list_display = ('product_unit', 'write_off_date', 'employee', 'created_by', 'created_at', 'updated_by', 'updated_at')
+    list_display = ('product_unit', 'write_off_date', 'write_off_destination', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('product_unit__product__name', 'product_unit__location__name')
     list_filter = ('write_off_date',)
 
@@ -260,8 +260,8 @@ class ColorAdmin(admin.ModelAdmin):
 class PatternAdmin(admin.ModelAdmin):
     pass
 
-@admin.register(Employee)
-class EmployeeAdmin(admin.ModelAdmin):
+@admin.register(WriteOffDestinations)
+class WriteOffDestinationsAdmin(admin.ModelAdmin):
     list_display = ('name', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('name',)
     list_filter = ('created_at', 'updated_at')
@@ -273,8 +273,8 @@ class EmployeeAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-@admin.register(Destinations)
-class DestinationsAdmin(admin.ModelAdmin):
+@admin.register(TransferAreas)
+class TransferAreasAdmin(admin.ModelAdmin):
     list_display = ('name', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('name',)
     list_filter = ('created_at', 'updated_at')
