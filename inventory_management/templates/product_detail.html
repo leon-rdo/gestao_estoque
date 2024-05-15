@@ -16,6 +16,8 @@
         </figure>
         {% endif %}
     </div>  
+    
+    {% if object.productunit_set.count != 0 %}         
     <div class="col-md-12">
         <form id="filter_search_form" method="GET" action="" class="mb-3">
             <div class="input-group">
@@ -35,9 +37,6 @@
             </div>
         </form>
     </div>
-    
-
-    {% if object.productunit_set.count != 0 %}         
     <div class="col-12">
         <h2>Unidades</h2>
         <table class="table table-striped table-bordered">

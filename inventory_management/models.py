@@ -93,14 +93,15 @@ class Product(models.Model):
 
 
     def save(self, *args, **kwargs):
-        super(Product, self).save(*args, **kwargs)
-        self.slug = slugify(self.name)
         if "liso" in self.name.lower() and self.color is None:
             for color in Color.objects.all():
-                Product.objects.create(name=f"{self.name.capitalize()} {color.name}", description=self.description, price=self.price, measure=self.measure, width=self.width, composition=self.composition, image=self.image, code=self.code, ncm=self.ncm, color=color, pattern=self.pattern, created_by=self.created_by, updated_by=self.updated_by)
+                Product.objects.create(name=f"{self.name.capitalize()} {color.name}", description=self.description, price=self.price, measure=self.measure, width=self.width, composition=self.composition, image=self.image, code=self.code, ncm=self.ncm, color=color, pattern=self.pattern, created_by=self.created_by, updated_by=self.updated_by, slug=slugify(f"{self.name} {color.name}"))
         if "estampado" in self.name.lower() and self.pattern is None:
             for pattern in Pattern.objects.all():
-                Product.objects.create(name=f"{self.name.capitalize()} {pattern.name}", description=self.description, price=self.price, measure=self.measure, width=self.width, composition=self.composition, image=self.image, code=self.code, ncm=self.ncm, color=self.color, pattern=pattern, created_by=self.created_by, updated_by=self.updated_by)
+                Product.objects.create(name=f"{self.name.capitalize()} {pattern.name}", description=self.description, price=self.price, measure=self.measure, width=self.width, composition=self.composition, image=self.image, code=self.code, ncm=self.ncm, color=self.color, pattern=pattern, created_by=self.created_by, updated_by=self.updated_by, slug=slugify(f"{self.name} {pattern.name}"))
+        self.slug = slugify(f"{self.name}")
+        self.name = self.name.capitalize()
+        super(Product, self).save(*args, **kwargs)
 
 
     def clean(self):
