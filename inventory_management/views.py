@@ -81,11 +81,11 @@ class ProductUnitDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transfer_areas'] = Destinations.objects.all()
+        context['transfer_areas'] = TransferAreas.objects.all()
         context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
         context['consumptions'] = ClothConsumption.objects.filter(product_unit=self.get_object())
         context['write_offs'] = Write_off.objects.filter(product_unit=self.get_object())
-        context['employees'] = Employee.objects.all()
+        context['write_off_destinations'] = WriteOffDestinations.objects.all()
         
         return context
         
@@ -94,26 +94,26 @@ class ProductUnitDetailView(DetailView):
 
         if 'write_off' in request.POST:
             product_unit.write_off = True
-            employee_id = request.POST.get('employee')
-            employee = Employee.objects.get(pk=employee_id)
+            write_off_destination_id = request.POST.get('write_off_destination')
+            write_off_destination = WriteOffDestinations.objects.get(pk=write_off_destination_id)
             
             if product_unit.shelf:
                 Write_off.objects.create(
                     product_unit=product_unit,
                     origin= product_unit.shelf,
-                    transfer_area= Destinations.objects.get_or_create(name="Baixa")[0],
+                    transfer_area= TransferAreas.objects.get_or_create(name="Baixa")[0],
                     write_off_date=timezone.now(),
                     observations= "Baixa de produto",
-                    employee = employee
+                    write_off_destination = write_off_destination
                 )
             else:
                 Write_off.objects.create(
                     product_unit=product_unit,
                     origin= product_unit.location,
-                    transfer_area= Destinations.objects.get_or_create(name="Baixa")[0],
+                    transfer_area= TransferAreas.objects.get_or_create(name="Baixa")[0],
                     write_off_date=timezone.now(),
                     observations= "Baixa de produto",
-                    employee = employee
+                    write_off_destination =write_off_destination
                 )    
             
         elif request.POST.get('back_to_stock') == 'True':
@@ -123,12 +123,12 @@ class ProductUnitDetailView(DetailView):
 
             if last_write_off_date:
                 last_write_off = Write_off.objects.filter(product_unit=product_unit, write_off_date=last_write_off_date).first()
-                employee = last_write_off.employee if last_write_off.employee else None
+                write_off_destination = last_write_off.write_off_destination if last_write_off.write_off_destination else None
             else:
-                employee = None
+                write_off_destination = None
 
             location_id = request.POST.get('location')
-            location = Destinations.objects.get(pk=location_id)
+            location = TransferAreas.objects.get(pk=location_id)
             shelf_id = request.POST.get('shelf')
 
             if shelf_id != None:
@@ -137,23 +137,23 @@ class ProductUnitDetailView(DetailView):
             
                 Write_off.objects.create(
                         product_unit=product_unit,
-                        origin=Destinations.objects.get_or_create(name="Baixa")[0],
+                        origin=TransferAreas.objects.get_or_create(name="Baixa")[0],
                         transfer_area=location,
                         destination=shelf,
                         write_off_date=timezone.now(),
                         observations="Retorno ao estoque",
-                        employee=employee, 
+                        write_off_destination=write_off_destination, 
                 )
                 product_unit.location = location
                 product_unit.shelf = shelf
             else:
                 Write_off.objects.create(
                     product_unit=product_unit,
-                    origin=Destinations.objects.get_or_create(name="Baixa")[0],
+                    origin=TransferAreas.objects.get_or_create(name="Baixa")[0],
                     transfer_area=location,
                     write_off_date=timezone.now(),
                     observations="Retorno ao estoque",
-                    employee=employee, 
+                   write_off_destination=write_off_destination, 
                 )
                 product_unit.location = location
                 product_unit.shelf = None

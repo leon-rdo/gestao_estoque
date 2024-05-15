@@ -44,7 +44,7 @@
                         <td>{{ write_off.transfer_area}}</td>
                         {% endif %}
                         <td>{{ write_off.observations }}</td>
-                        <td>{{ write_off.employee }}</td>
+                        <td>{{ write_off.write_off_destination}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -155,12 +155,12 @@
                           Tem certeza de que deseja dar baixa neste item?
                           <br>
                           <div class="form-group">
-                            <label for="employee" class="form-label">Responsável:</label>
+                            <label for="write_off_destination" class="form-label">Destinatário da Baixa:</label>
                             <form id="write_off_form" method="post" action="">
                                 {% csrf_token %}
-                                <select name="employee" id="employee" class="form-select">
-                                  {% for employee in employees %}
-                                  <option value="{{ employee.id }}">{{ employee }}</option>
+                                <select name="write_off_destination" id="write_off_destination" class="form-select">
+                                  {% for write_off_destination in write_off_destinations %}
+                                  <option value="{{ write_off_destination.id }}">{{ write_off_destination }}</option>
                                   {% endfor %}
                               </select>
                                 <input type="hidden" name="write_off" value="True">
@@ -283,17 +283,12 @@
                 url: form.attr('action'),
                 data: form.serialize(),
                 success: function(data){
-                    // Sucesso ao enviar o formulário
-                    // Recarregar a página para refletir as alterações
                     window.location.reload();
                 },
                 error: function(xhr, textStatus, errorThrown){
-                    // Erro ao enviar o formulário
                     if (xhr.status === 400) {
                         var errors = xhr.responseJSON;
-                        // Limpar mensagens de erro anteriores
                         form.find('.remainder-error').empty();
-                        // Exibir mensagens de erro
                         if (errors.hasOwnProperty('remainder')) {
                             form.find('.remainder-error').text(errors.remainder);
                         }

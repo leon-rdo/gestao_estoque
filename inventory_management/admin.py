@@ -288,3 +288,4 @@ class TransferAreasAdmin(admin.ModelAdmin):
 @admin.register(WorkSpace)
 class WorkSpaceAdmin(admin.ModelAdmin):
     pass
+
