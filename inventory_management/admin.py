@@ -2,7 +2,6 @@ from django import forms
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.urls import path
-
 from django.shortcuts import redirect
 from django.utils.safestring import mark_safe
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -22,7 +21,6 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'quantity', 'custom_display', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('name',)
     
-    
     def custom_display(self, obj):
         if "liso" in obj.name.lower():
             return obj.color
@@ -31,14 +29,6 @@ class ProductAdmin(admin.ModelAdmin):
         else:
             return "N/A"
     custom_display.short_description = "Liso/Estampado" 
-    
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if not obj and form.base_fields.get('color'):
-            form.base_fields['color'].widget = forms.HiddenInput()
-        elif not obj and form.base_fields.get('pattern'):
-            form.base_fields['pattern'].widget = forms.HiddenInput()
-        return form
     
     def save_model(self, request, obj, form, change):
         if not change:  

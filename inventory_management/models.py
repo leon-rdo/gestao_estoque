@@ -3,7 +3,9 @@ from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-import uuid 
+import uuid
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 
 class Color(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -25,6 +27,15 @@ class Color(models.Model):
         verbose_name_plural = "Cores"
         verbose_name = "Cor"
         
+@receiver(post_save, sender=Color)
+def create_or_update_products_with_color(sender, instance, created, **kwargs):
+    if created:
+        for product in Product.objects.filter(name__contains="liso", color__isnull=True):
+            Product.objects.create(name=f"{product.name.capitalize()} {instance.name}", description=product.description, price=product.price, measure=product.measure, width=product.width, composition=product.composition, image=product.image, code=product.code, ncm=product.ncm, color=instance, pattern=product.pattern, created_by=product.created_by, updated_by=product.updated_by)
+    else:
+        Product.objects.filter(color=instance).delete()
+
+        
 class Pattern(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Estampa", max_length=100)
@@ -44,6 +55,14 @@ class Pattern(models.Model):
     class Meta:
         verbose_name_plural = "Estampas"
         verbose_name = "Estampa"
+
+@receiver(post_save, sender=Pattern)
+def create_or_update_products_with_pattern(sender, instance, created, **kwargs):
+    if created:
+        for product in Product.objects.filter(name__contains="estampado", pattern__isnull=True):
+            Product.objects.create(name=f"{product.name.capitalize()} {instance.name}", description=product.description, price=product.price, measure=product.measure, width=product.width, composition=product.composition, image=product.image, code=product.code, ncm=product.ncm, color=product.color, pattern=instance, created_by=product.created_by, updated_by=product.updated_by)
+    else:
+        Product.objects.filter(pattern=instance).delete()
         
         
 class Product(models.Model):
@@ -72,23 +91,22 @@ class Product(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='product_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
-    def __init__(self, *args, **kwargs):
-        super(Product, self).__init__(*args, **kwargs)
-        if "estampado" in self.name.lower():
-            self.set_editable_fields(color=False, pattern=True)
-        elif "liso" in self.name.lower():
-            self.set_editable_fields(color=True, pattern=False)
-        else:
-            self.set_editable_fields(color=False, pattern=False)
-
-    def set_editable_fields(self, color, pattern):
-        self._meta.get_field('color').editable = color
-        self._meta.get_field('pattern').editable = pattern
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.name)
         super(Product, self).save(*args, **kwargs)
+        self.slug = slugify(self.name)
+        if "liso" in self.name.lower() and self.color is None:
+            for color in Color.objects.all():
+                Product.objects.create(name=f"{self.name.capitalize()} {color.name}", description=self.description, price=self.price, measure=self.measure, width=self.width, composition=self.composition, image=self.image, code=self.code, ncm=self.ncm, color=color, pattern=self.pattern, created_by=self.created_by, updated_by=self.updated_by)
+        if "estampado" in self.name.lower() and self.pattern is None:
+            for pattern in Pattern.objects.all():
+                Product.objects.create(name=f"{self.name.capitalize()} {pattern.name}", description=self.description, price=self.price, measure=self.measure, width=self.width, composition=self.composition, image=self.image, code=self.code, ncm=self.ncm, color=self.color, pattern=pattern, created_by=self.created_by, updated_by=self.updated_by)
 
+
+    def clean(self):
+        if Product.objects.filter(name__startswith=self.name).exists():
+            raise ValidationError("Esse nome já está em uso.")
+        
     @property
     def quantity(self):
         return self.productunit_set.count()
