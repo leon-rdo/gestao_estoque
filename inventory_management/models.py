@@ -113,10 +113,10 @@ class ProductUnit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
     location = models.ForeignKey('inventory_management.TransferAreas',default=get_default_location, on_delete=models.CASCADE, verbose_name="Localização")
-    store = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Loja", blank=True, null=True)
+    building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Loja", blank=True, null=True)
     room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
-    shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Gaveta", blank=True, null=True)
+    shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
     weight_length = models.DecimalField("Tamanho / Peso", max_digits=10, decimal_places=2, null=False, blank=False)
@@ -158,10 +158,13 @@ class ProductUnit(models.Model):
 class StockTransfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
-    origin = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
-    shelf_origin = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="shelf_origin", verbose_name="Gaveta de origem", blank=True, null=True)
-    transfer_area = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, verbose_name="Área de Transferência")
-    destination = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
+    origin_transfer_area = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
+    origin_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="shelf_origin", verbose_name="Prateleira de origem", blank=True, null=True)
+    destination_transfer_area = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, verbose_name="Área de Transferência")
+    destination_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Loja", blank=True, null=True)
+    destination_room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
+    destination_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
+    destination_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
     transfer_date = models.DateField("Data da Transferência")
     observations = models.TextField("Observações", blank=True, null=True)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='stock_created_by', null=True, editable=False)
@@ -170,11 +173,11 @@ class StockTransfer(models.Model):
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
-        if self.shelf_origin == self.destination:
+        if self.origin_shelf == self.destination_shelf:
             raise ValidationError("Origem e destino não podem ser iguais.")
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
-        if self.product_unit.shelf != self.shelf_origin:
+        if self.product_unit.shelf != self.origin_shelf or self.product_unit.location != self.origin_transfer_area:
             raise ValidationError("A unidade de produto não está na origem.")
         
         self.product_unit.location = self.transfer_area
@@ -183,7 +186,7 @@ class StockTransfer(models.Model):
         super(StockTransfer, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product_unit.product.name} - {self.shelf_origin.hall.room.building} ( {self.origin}) -> {self.destination.hall.room.building} ({self.destination})"
+        return f"{self.product_unit.product.name} - {self.shelf_origin.hall.room.building} ( {self.origin}) -> {self.destination_shelf.destination_hall.destination_room.destination_building} ({self.destination_shelfy})"
 
     class Meta:
         verbose_name_plural = "Transferências de Estoque"

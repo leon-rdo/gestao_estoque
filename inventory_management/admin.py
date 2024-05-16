@@ -5,7 +5,7 @@ from django.urls import path
 
 from django.shortcuts import redirect
 from django.utils.safestring import mark_safe
-from django.core.files.uploadedfile import InMemoryUploadedFile
+
 import base64
 from io import BytesIO
 import qrcode
@@ -77,15 +77,16 @@ class ClothConsumptionInline(admin.TabularInline):
 
 class StockTransferInline(admin.TabularInline):
     model = StockTransfer
-    readonly_fields = ('origin','shelf_origin','transfer_area', 'destination', 'transfer_date', 'observations')
+    readonly_fields = ('origin_transfer_area','origin_shelf','destination_transfer_area', 'destination_shelf', 'transfer_date', 'observations')
     extra = 0
 
     
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'location', 'weight_length_with_measure', 'purchase_date', "created_by", "created_at", "updated_by", "updated_at")
+    list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'purchase_date', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
+    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming', 'write_off']
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
 
@@ -94,6 +95,12 @@ class ProductUnitAdmin(admin.ModelAdmin):
             'https://code.jquery.com/jquery-3.6.0.min.js',
             'admin/product_unit_admin.js',
         )
+
+    def shelf_or_none(self, obj):
+        if obj.shelf:
+            return obj.shelf
+        return "N/A"
+    shelf_or_none.short_description = 'Prateleira'
 
     def weight_length_with_measure(self, obj):
         product_measure = obj.product.get_measure_display()
@@ -117,9 +124,18 @@ class ProductUnitAdmin(admin.ModelAdmin):
         if obj:
             form.base_fields['quantity'].widget = forms.HiddenInput()
             form.base_fields['weight_length'].disabled = True
+            form.base_fields['building'].disabled = True
+            form.base_fields['room'].disabled = True
+            form.base_fields['hall'].disabled = True
+            form.base_fields['shelf'].disabled = True
         else:
             pass
         return form
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "location":
+            kwargs["queryset"] = TransferAreas.objects.exclude(name = "Baixa")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -161,17 +177,18 @@ class ProductUnitAdmin(admin.ModelAdmin):
         if not change:  
             obj.created_by = request.user
         obj.updated_by = request.user
+        
         super().save_model(request, obj, form, change)
 
 @admin.register(StockTransfer)
 class StockTransferAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'transfer_date', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('product_unit__product__name', 'origin__name', 'destination__name')
-    list_filter = ('transfer_date', 'origin', 'destination')
+    list_filter = ('transfer_date', 'origin_shelf', 'destination_shelf')
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ('product_unit', 'origin', 'destination', 'transfer_date')
+            return self.readonly_fields + ('product_unit', 'origin_transfer_area', 'destination_shelf', 'transfer_date')
         return self.readonly_fields
 
     class Media:

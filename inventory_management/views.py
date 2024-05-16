@@ -353,4 +353,21 @@ class WorkSpaceView(ListView):
             except ProductUnit.DoesNotExist:
                 return JsonResponse({'error': 'Produto nao encontrado'}, status=400)
             
-        
+
+def get_rooms(request):
+    building_id = request.GET.get('building_id')
+    rooms = Room.objects.filter(building_id=building_id)
+    data = [{'id': room.id, 'name': room.name} for room in rooms]
+    return JsonResponse(data, safe=False)
+
+def get_halls(request):
+    room_id = request.GET.get('room_id')
+    halls = Hall.objects.filter(room_id=room_id)
+    data = [{'id': hall.id, 'name': hall.name} for hall in halls]
+    return JsonResponse(data, safe=False)
+
+def get_shelves(request):
+    hall_id = request.GET.get('hall_id')
+    shelves = Shelf.objects.filter(hall_id=hall_id)
+    data = [{'id': shelf.id, 'name': shelf.name} for shelf in shelves]
+    return JsonResponse(data, safe=False)
