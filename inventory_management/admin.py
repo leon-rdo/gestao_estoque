@@ -76,7 +76,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'purchase_date', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
-    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming', 'write_off', 'qr_code_image']
+    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming', 'write_off']
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
 
@@ -86,6 +86,13 @@ class ProductUnitAdmin(admin.ModelAdmin):
             'admin/product_unit_admin.js',
         )
 
+    
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj:
+            fieldsets.append(('QR Code', {'fields': ('qr_code_image',)}))
+        return fieldsets
+    
     def shelf_or_none(self, obj):
         if obj.shelf:
             return obj.shelf
