@@ -28,8 +28,8 @@
                     {% for transfer in object.stocktransfer_set.all %}
                     <tr>
                         <td>{{ transfer.transfer_date }}</td>
-                        <td>{{ transfer.origin }}</td>
-                        <td>{{ transfer.destination }}</td>
+                        <td>{{ transfer.origin_transfer_area }} {% if transfer.origin_shelf%} - {{transfer.origin_shelf }} {% endif %}</td>
+                        <td>{{ transfer.destination_transfer_area }} {% if transfer.destination_shelf%} - {{transfer.destination_shelf }} {% endif %}</td>
                         <td>{{ transfer.observations }}</td>
                         <td> - </td>
                     </tr>
