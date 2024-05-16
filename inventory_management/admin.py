@@ -73,7 +73,7 @@ class StockTransferInline(admin.TabularInline):
     
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'purchase_date', "created_by", "created_at", "updated_by", "updated_at")
+    list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'write_off' ,'purchase_date', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
     fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming', 'write_off']

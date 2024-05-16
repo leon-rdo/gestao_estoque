@@ -4,9 +4,7 @@
 <div class="row justify-content-center align-items-center g-2 py-3">
     <div class="col-12">
         <h1 class="">Minha área de trabalho</h1>
-    </div>
-    <div class="col-12 col-md-6 col-lg-4">
-        <div id="reader" width="100%"></div>
+        <div id="reader" class="qr-code-reader"></div> <!-- Movendo a área de leitura para o cabeçalho -->
     </div>
     <div class="col-12">
         <h2>Produtos na área de trabalho:</h2>
@@ -14,7 +12,8 @@
             <thead>
                 <tr>
                     <th>Nome</th>
-                    <th>ID</th>
+                    <th>Identificador</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -22,17 +21,43 @@
                 <tr>
                     <td>{{ workspace.product.product }}</td>
                     <td>{{ workspace.product.id }}</td>
+                    <td>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="remove" value="{{ workspace.product.id }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+    
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="2">Nenhum produto na área de trabalho.</td>
+                    <td colspan="3">Nenhum produto na área de trabalho.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <button type="button" class="btn btn-danger flex-fill w-100" data-toggle="modal" data-target="#confirmationModal">
-            <i class="bi bi-trash"></i> Limpar área de trabalho
-        </button>
+        <div class="col-12 g-3">
+            <div class="row justify-content-center align-items-center">
+                <div class="col-md-4 col-12 mb-2">
+                    <button type="button" class="btn btn-success w-100" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
+                        <i class="bi bi-arrow-up-circle"></i> Transferir produtos
+                    </button>
+                </div>   
+                <div class="col-md-4 col-12 mb-2">
+                    <button type="button" class="btn btn-warning w-100" data-toggle="modal" data-target="#confirmationModalBaixa">
+                        <i class="bi bi-archive"></i> Baixar produtos
+                    </button>
+                </div>
+                <div class="col-md-4 col-12 mb-2">
+                    <button type="button" class="btn btn-danger w-100" data-toggle="modal" data-target="#confirmationModal">
+                        <i class="bi bi-trash"></i> Limpar área de trabalho
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -62,13 +87,72 @@
             </form>
         </div>
       </div>
+    </div>       
+</div>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasExampleLabel">Fazer Transferência</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-</div>  
-
+    <div class="offcanvas-body">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            <div class="col-12">
+                
+            </div>
+            <div class="col-12">
+                <label for="observations" class="form-label">Observações:</label>
+                <textarea name="observations" id="observations" class="form-control"></textarea>
+            </div>
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary" {% if not shelves %}disabled{% endif %}><i class="bi bi-arrow-right"></i> Transferir</button>
+            </div>
+        </form>
+    </div>            
+</div>
+<div class="modal fade" id="confirmationModalBaixa" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Confirmação de Baixas</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Tem certeza de que deseja dar baixa nesses produtos?
+          <br>
+          <div class="form-group">
+            <label for="write_off_destination" class="form-label">Destinatário da Baixa:</label>
+            <form id="write_off_form" method="post" action="">
+                {% csrf_token %}
+        </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning">Confirmar Baixa</button>
+            </form>
+        </div>
+      </div>
+    </div> 
+</div>
 {% endblock content %}
 
+{% block extra_styles %}
+<style>
+    .qr-code-reader {
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2); /* Adicionando sombreamento */
+    }
+</style>
+{% endblock extra_styles %}
 
 {% block extra_scripts %}
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
@@ -102,6 +186,33 @@
             },
         });
     }
+
+    $(document).ready(function () {
+        $('form').submit(function (event) {
+            event.preventDefault();
+            
+            var formData = $(this).serialize();
+            
+            $.ajax({
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        if (response.reload) {
+                            location.reload();
+                        }
+                    } else {
+                        console.log(response.error);
+                    }
+                },
+                error: function (xhr, errmsg, err) {
+                    console.log(xhr.status + ": " + xhr.responseText);
+                    alert("Erro ao processar a solicitação. Por favor, tente novamente mais tarde.");
+                },
+            });
+        });
+    });
 
     function onScanFailure(error) {
         console.warn(`Code scan error = ${error}`);

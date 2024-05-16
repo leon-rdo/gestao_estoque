@@ -238,6 +238,15 @@ class Write_off(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='writeoff_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
     
+    def save(self, *args, **kwargs):
+        if self.write_off_destination:
+            self.product_unit.write_off = True
+        else:
+            self.product_unit.write_off = False
+            
+        self.product_unit.save()
+        super(Write_off, self).save(*args, **kwargs)
+    
     class Meta:
         verbose_name_plural = "Baixas"
         verbose_name = "Baixa"

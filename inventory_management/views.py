@@ -144,6 +144,7 @@ class ProductUnitDetailView(DetailView):
                         observations="Retorno ao estoque",
                         write_off_destination=write_off_destination, 
                 )
+                product_unit.write_off = False
                 product_unit.location = location
                 product_unit.shelf = shelf
             else:
@@ -155,6 +156,7 @@ class ProductUnitDetailView(DetailView):
                     observations="Retorno ao estoque",
                    write_off_destination=write_off_destination, 
                 )
+                product_unit.write_off = False
                 product_unit.location = location
                 product_unit.shelf = None
         else:
@@ -339,10 +341,16 @@ class WorkSpaceView(ListView):
             return HttpResponseRedirect(reverse('inventory_management:workspace'))
         
         product_id = request.POST.get('product_id')
+        remove = request.POST.get('remove')
 
-        if not product_id:
-            return JsonResponse({'error': 'ID de produto inválido'}, status=400)
-        
+        if remove:
+            try:
+                product_id = request.POST.get('remove')
+                WorkSpace.objects.filter(user=request.user, product_id=product_id).delete()
+                return JsonResponse({'success': 'Produto removido da área de trabalho', 'reload': True}, status=200)
+            except ProductUnit.DoesNotExist:
+                return JsonResponse({'error': 'Produto nao encontrado'}, status=400)
+            
         if product_id:
             try:
                 product = ProductUnit.objects.get(pk=product_id)
@@ -353,7 +361,7 @@ class WorkSpaceView(ListView):
                         user=request.user,
                         product=product
                     )
-                    return JsonResponse({'success': 'Produto adicionado à área de trabalho', 'reload': True}, status=200)
+                    return JsonResponse({'success': 'Produto adicionado a area de trabalho', 'reload': True}, status=200)
             except ProductUnit.DoesNotExist:
                 return JsonResponse({'error': 'Produto nao encontrado'}, status=400)
             
