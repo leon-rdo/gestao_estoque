@@ -126,13 +126,16 @@ class Product(models.Model):
     
 
 def get_default_location():
-    return Destinations.objects.get_or_create(name="Depósito")[0]
+    return TransferAreas.objects.get_or_create(name="Depósito")[0]
 
 class ProductUnit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
-    location = models.ForeignKey('inventory_management.Destinations',default=get_default_location, on_delete=models.CASCADE, verbose_name="Localização")
-    shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Gaveta", blank=True, null=True)
+    location = models.ForeignKey('inventory_management.TransferAreas',default=get_default_location, on_delete=models.CASCADE, verbose_name="Localização")
+    building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Loja", blank=True, null=True)
+    room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
+    hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
+    shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
     weight_length = models.DecimalField("Tamanho / Peso", max_digits=10, decimal_places=2, null=False, blank=False)
@@ -174,32 +177,43 @@ class ProductUnit(models.Model):
 class StockTransfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
-    origin = models.ForeignKey('inventory_management.Destinations', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
-    shelf_origin = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="shelf_origin", verbose_name="Gaveta de origem", blank=True, null=True)
-    transfer_area = models.ForeignKey('inventory_management.Destinations', on_delete=models.CASCADE, verbose_name="Área de Transferência")
-    destination = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="destination", verbose_name="Destino")
+    origin_transfer_area = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
+    origin_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="shelf_origin", verbose_name="Prateleira de origem", blank=True, null=True)
+    destination_transfer_area = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, verbose_name="Destino de Transferência")
+    destination_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Loja de Destino", blank=True, null=True)
+    destination_room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala de Destino", blank=True, null=True)
+    destination_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor de Destino", blank=True, null=True)
+    destination_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira de Destino", blank=True, null=True)
     transfer_date = models.DateField("Data da Transferência")
     observations = models.TextField("Observações", blank=True, null=True)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='stock_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='stock_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+    
 
     def save(self, *args, **kwargs):
-        if self.shelf_origin == self.destination:
+        if self.origin_shelf == self.destination_shelf:
+            raise ValidationError("Origem e destino não podem ser iguais.")
+        if not self.product_unit.shelf and self.product_unit.location == self.destination_transfer_area:
             raise ValidationError("Origem e destino não podem ser iguais.")
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
-        if self.product_unit.shelf != self.shelf_origin:
+        if self.product_unit.shelf != self.origin_shelf or self.product_unit.location != self.origin_transfer_area:
+            raise ValidationError("A unidade de produto não está na origem.")
+        if not self.product_unit.shelf and self.origin_shelf:
             raise ValidationError("A unidade de produto não está na origem.")
         
-        self.product_unit.location = self.transfer_area
-        self.product_unit.shelf = self.destination
+        self.product_unit.location = self.destination_transfer_area
+        self.product_unit.building = self.destination_building
+        self.product_unit.room = self.destination_room
+        self.product_unit.hall = self.destination_hall
+        self.product_unit.shelf = self.destination_shelf
         self.product_unit.save()
         super(StockTransfer, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product_unit.product.name} - {self.shelf_origin.hall.room.building} ( {self.origin}) -> {self.destination.hall.room.building} ({self.destination})"
+        return f"{self.product_unit.product.name} - {self.origin_shelf.hall.room.building} ( {self.origin_shelf}) -> {self.destination_shelf.hall.room.building} ({self.destination_shelf})"
 
     class Meta:
         verbose_name_plural = "Transferências de Estoque"
@@ -212,11 +226,11 @@ class Write_off(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
     origin = models.CharField("Origem", blank=True, null=True, max_length=100)
-    transfer_area = models.ForeignKey('inventory_management.Destinations',on_delete=models.CASCADE,verbose_name="Área de transferência", blank=True, null=True)
-    destination = models.ForeignKey('inventory_management.Shelf',on_delete=models.CASCADE,verbose_name="Destino", blank=True, null=True)
+    transfer_area = models.ForeignKey('inventory_management.TransferAreas',on_delete=models.CASCADE,verbose_name="Área de transferência", blank=True, null=True)
+    recomission_destination = models.ForeignKey('inventory_management.Shelf',on_delete=models.CASCADE,verbose_name="Destino da Recomissão", blank=True, null=True)
     write_off_date = models.DateTimeField("Data de Baixa", auto_now_add=True)
     observations = models.TextField("Observações", blank=True, null=True)
-    employee = models.ForeignKey('inventory_management.Employee', on_delete=models.CASCADE, verbose_name="Funcionário", blank=True, null=True)
+    write_off_destination = models.ForeignKey('inventory_management.WriteOffDestinations', on_delete=models.CASCADE, verbose_name="Destinatário da Baixa", blank=True, null=True)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='writeoff_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='writeoff_updated_by', null=True, editable=False)
@@ -366,18 +380,18 @@ class ClothConsumption(models.Model):
         verbose_name_plural = "Consumos de Tecido"
         verbose_name = "Consumo de Tecido"
 
-class Employee(models.Model):
+class WriteOffDestinations(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome do Funcionário", max_length=100)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
-    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='employee_created_by', null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='writeoffdestinations_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
-    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='employee_updated_by', null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='writeoffdestinations_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
-        super(Employee, self).save(*args, **kwargs)
+        super(WriteOffDestinations, self).save(*args, **kwargs)
     
     def __str__(self):
         return self.name
@@ -386,7 +400,7 @@ class Employee(models.Model):
         verbose_name_plural = "Destinos de Baixa"
         verbose_name = "Destino de Baixa"
 
-class Destinations(models.Model):
+class TransferAreas(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome do Local", max_length=100)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
@@ -397,14 +411,14 @@ class Destinations(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
-        super(Destinations, self).save(*args, **kwargs)
+        super(TransferAreas, self).save(*args, **kwargs)
     
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name_plural = "Destinos"
-        verbose_name = "Destino"
+        verbose_name_plural = "Áreas de Transferência"	
+        verbose_name = "Área de Transferência"
         
 
 class WorkSpace(models.Model):
