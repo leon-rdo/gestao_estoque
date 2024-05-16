@@ -217,10 +217,14 @@ class AddressDetailView(DetailView):
     template_name = 'address.html'
 
 
-class GetProductLocationView(View):
+class GetProductLocationShelfView(View):
     def get(self, request, *args, **kwargs):
-        product_unit = ProductUnit.objects.get(slug=self.kwargs.get('slug'))
-        return JsonResponse({'location': str(product_unit.location.slug)})
+        product_unit_id = kwargs.get('product_unit_id')
+        try:
+            product_unit = ProductUnit.objects.get(id=product_unit_id)
+            return JsonResponse({'location': product_unit.location_id, 'shelf': product_unit.shelf_id})
+        except ProductUnit.DoesNotExist:
+            return JsonResponse({}, status=404)
     
 def calculate_items_per_page(page_width, page_height, qr_size, columns):
     available_width = page_width - 100 

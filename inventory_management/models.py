@@ -160,33 +160,41 @@ class StockTransfer(models.Model):
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
     origin_transfer_area = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, related_name="origin", verbose_name="Origem")
     origin_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="shelf_origin", verbose_name="Prateleira de origem", blank=True, null=True)
-    destination_transfer_area = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, verbose_name="Área de Transferência")
-    destination_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Loja", blank=True, null=True)
-    destination_room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
-    destination_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
-    destination_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
+    destination_transfer_area = models.ForeignKey('inventory_management.TransferAreas', on_delete=models.CASCADE, verbose_name="Destino de Transferência")
+    destination_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Loja de Destino", blank=True, null=True)
+    destination_room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala de Destino", blank=True, null=True)
+    destination_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor de Destino", blank=True, null=True)
+    destination_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira de Destino", blank=True, null=True)
     transfer_date = models.DateField("Data da Transferência")
     observations = models.TextField("Observações", blank=True, null=True)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='stock_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='stock_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+    
 
     def save(self, *args, **kwargs):
         if self.origin_shelf == self.destination_shelf:
+            raise ValidationError("Origem e destino não podem ser iguais.")
+        if not self.product_unit.shelf and self.product_unit.location == self.destination_transfer_area:
             raise ValidationError("Origem e destino não podem ser iguais.")
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
         if self.product_unit.shelf != self.origin_shelf or self.product_unit.location != self.origin_transfer_area:
             raise ValidationError("A unidade de produto não está na origem.")
+        if not self.product_unit.shelf and self.origin_shelf:
+            raise ValidationError("A unidade de produto não está na origem.")
         
-        self.product_unit.location = self.transfer_area
-        self.product_unit.shelf = self.destination
+        self.product_unit.location = self.destination_transfer_area
+        self.product_unit.building = self.destination_building
+        self.product_unit.room = self.destination_room
+        self.product_unit.hall = self.destination_hall
+        self.product_unit.shelf = self.destination_shelf
         self.product_unit.save()
         super(StockTransfer, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product_unit.product.name} - {self.shelf_origin.hall.room.building} ( {self.origin}) -> {self.destination_shelf.destination_hall.destination_room.destination_building} ({self.destination_shelfy})"
+        return f"{self.product_unit.product.name} - {self.origin_shelf.hall.room.building} ( {self.origin_shelf}) -> {self.destination_shelf.hall.room.building} ({self.destination_shelf})"
 
     class Meta:
         verbose_name_plural = "Transferências de Estoque"

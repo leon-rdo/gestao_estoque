@@ -86,7 +86,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'purchase_date', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
-    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming', 'write_off']
+    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming', 'write_off', 'qr_code_image']
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
 
@@ -124,10 +124,6 @@ class ProductUnitAdmin(admin.ModelAdmin):
         if obj:
             form.base_fields['quantity'].widget = forms.HiddenInput()
             form.base_fields['weight_length'].disabled = True
-            form.base_fields['building'].disabled = True
-            form.base_fields['room'].disabled = True
-            form.base_fields['hall'].disabled = True
-            form.base_fields['shelf'].disabled = True
         else:
             pass
         return form
@@ -139,7 +135,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ('location', 'qr_code_image')
+            return self.readonly_fields + ('location', 'qr_code_image', 'building', 'room', 'hall', 'shelf', 'purchase_date',)
         return self.readonly_fields
 
     def get_urls(self):
@@ -185,12 +181,18 @@ class StockTransferAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'transfer_date', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('product_unit__product__name', 'origin__name', 'destination__name')
     list_filter = ('transfer_date', 'origin_shelf', 'destination_shelf')
+    fields = ['product_unit', 'origin_transfer_area', 'origin_shelf', 'destination_transfer_area','destination_building', 'destination_room', 'destination_hall', 'destination_shelf', 'transfer_date', 'observations']
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ('product_unit', 'origin_transfer_area', 'destination_shelf', 'transfer_date')
+            return self.readonly_fields + ('product_unit', 'origin_transfer_area', 'origin_shelf','destination_transfer_area', 'destination_shelf', 'transfer_date')
         return self.readonly_fields
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "location":
+            kwargs["queryset"] = TransferAreas.objects.exclude(name = "Baixa")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    
     class Media:
         js = ('admin/autocomplete_origin.js',)
 

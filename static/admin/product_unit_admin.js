@@ -1,9 +1,7 @@
 $(document).ready(function() {
     var isCreationMode = window.location.href.indexOf('/add/') !== -1;
     
-    // Função para atualizar os campos dependendo da seleção
     function updateFields() {
-        // Se o formulário não estiver em modo de criação, saia da função
         if (!isCreationMode) {
             return;
         }
@@ -12,16 +10,14 @@ $(document).ready(function() {
         var buildingSelected = $('#id_building').val();
         var roomSelected = $('#id_room').val();
         var hallSelected = $('#id_hall').val();
-        var shelfSelected = $('#id_shelf').val(); // Adicionado aqui
+        var shelfSelected = $('#id_shelf').val(); 
 
-        // Mostrar ou ocultar campos dependendo da localização selecionada
         if (locationSelected === "Loja") {
             $('.field-building').show();
         } else {
             $('.field-building').hide();
         }
 
-        // Atualizar e mostrar o campo de salas se um prédio for selecionado
         if (buildingSelected) {
             $('.field-room').show();
             updateRooms(buildingSelected, roomSelected);
@@ -29,7 +25,6 @@ $(document).ready(function() {
             $('.field-room').hide();
         }
 
-        // Atualizar e mostrar o campo de corredores se uma sala for selecionada
         if (roomSelected) {
             $('.field-hall').show();
             updateHalls(roomSelected, hallSelected);
@@ -37,7 +32,6 @@ $(document).ready(function() {
             $('.field-hall').hide();
         }
 
-        // Atualizar e mostrar o campo de prateleiras se um corredor for selecionado
         if (hallSelected) {
             $('.field-shelf').show();
             updateShelves(hallSelected, shelfSelected);
@@ -46,9 +40,7 @@ $(document).ready(function() {
         }
     }
 
-    // Função para buscar salas com base no prédio selecionado
     function updateRooms(buildingId, selectedRoom) {
-        // Se a seleção de prédio estiver vazia, saia da função
         if (!buildingId) {
             return;
         }
@@ -72,9 +64,7 @@ $(document).ready(function() {
         });
     }
 
-    // Função para buscar corredores com base na sala selecionada
     function updateHalls(roomId, selectedHall) {
-        // Se a seleção de sala estiver vazia, saia da função
         if (!roomId) {
             return;
         }
@@ -98,9 +88,7 @@ $(document).ready(function() {
         });
     }
 
-    // Função para buscar prateleiras com base no corredor selecionado
     function updateShelves(hallId, selectedShelf) {
-        // Se a seleção de corredor estiver vazia, saia da função
         if (!hallId) {
             return;
         }
@@ -124,7 +112,6 @@ $(document).ready(function() {
         });
     }
 
-    // Atualizar os campos quando ocorrer uma mudança nas seleções
     $('#id_location').change(function() {
         updateFields();
     });
@@ -141,6 +128,5 @@ $(document).ready(function() {
         updateFields();
     });
 
-    // Inicializar os campos quando a página for carregada
     updateFields();
 });
