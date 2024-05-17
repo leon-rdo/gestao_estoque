@@ -210,11 +210,21 @@ class WriteOffAdmin(admin.ModelAdmin):
     class Media:
         js = ('admin/admin_write_off.js',)
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "transfer_area":
+            kwargs["queryset"] = TransferAreas.objects.filter(name = "Baixa")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def write_off_destination_or_none(self, obj):
         if obj.write_off_destination:
             return obj.write_off_destination
         return "N/A"
-    write_off_destination_or_none.short_description = 'Destinatário da baixa'    
+    write_off_destination_or_none.short_description = 'Destinatário da baixa'   
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields['origin'].widget = forms.HiddenInput() 
+        return form
 
     def get_readonly_fields(self, request, obj=None):
         if obj:

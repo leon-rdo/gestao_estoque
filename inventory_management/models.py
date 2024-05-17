@@ -194,8 +194,6 @@ class StockTransfer(models.Model):
     
 
     def save(self, *args, **kwargs):
-        if self.origin_shelf == self.destination_shelf:
-            raise ValidationError("Origem e destino não podem ser iguais.")
         if not self.product_unit.shelf and self.product_unit.location == self.destination_transfer_area:
             raise ValidationError("Origem e destino não podem ser iguais.")
         if self.product_unit.write_off:
@@ -226,8 +224,8 @@ class StockTransfer(models.Model):
         return reverse('inventory_management:product_unit_detail', kwargs={'product_slug':self.product_unit.product.slug, 'slug': self.product_unit.slug})
 
 class Write_off(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
+    origin = models.CharField("Origem", max_length=100, blank=True, null=True)
     transfer_area = models.ForeignKey('inventory_management.TransferAreas',on_delete=models.CASCADE,verbose_name="Área de transferência",related_name='writeoff_origin', blank=True, null=True)
     recomission_transfer_area = models.ForeignKey('inventory_management.TransferAreas',on_delete=models.CASCADE,verbose_name="Área de Recomissão", blank=True, null=True)
     recomission_building = models.ForeignKey('inventory_management.Building',on_delete=models.CASCADE,verbose_name="Loja de Recomissão", blank=True, null=True)

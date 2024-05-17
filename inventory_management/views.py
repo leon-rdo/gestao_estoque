@@ -83,6 +83,9 @@ class ProductUnitDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['transfer_areas'] = TransferAreas.objects.all()
+        context['buildings'] = Building.objects.all()
+        context['rooms'] = Room.objects.all()
+        context['halls'] = Hall.objects.all()
         context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
         context['consumptions'] = ClothConsumption.objects.filter(product_unit=self.get_object())
         context['write_offs'] = Write_off.objects.filter(product_unit=self.get_object())
@@ -130,52 +133,104 @@ class ProductUnitDetailView(DetailView):
 
             location_id = request.POST.get('location')
             location = TransferAreas.objects.get(pk=location_id)
+            building_id = request.POST.get('building')
+            room_id = request.POST.get('room')
+            hall_id = request.POST.get('hall')
             shelf_id = request.POST.get('shelf')
+            
 
-            if shelf_id != None:
+            if shelf_id:
+                building = Building.objects.get(pk=building_id)
+                room = Room.objects.get(pk=room_id)
+                hall = Hall.objects.get(pk=hall_id)
                 shelf = Shelf.objects.get(pk=shelf_id)
 
-            
-                Write_off.objects.create(
-                        product_unit=product_unit,
-                        origin=TransferAreas.objects.get_or_create(name="Baixa")[0],
-                        transfer_area=location,
-                        destination=shelf,
-                        write_off_date=timezone.now(),
-                        observations="Retorno ao estoque",
-                        write_off_destination=write_off_destination, 
-                )
-                product_unit.write_off = False
-                product_unit.location = location
-                product_unit.shelf = shelf
-            else:
+                # Crie o objeto Write_off com os campos preenchidos
                 Write_off.objects.create(
                     product_unit=product_unit,
                     origin=TransferAreas.objects.get_or_create(name="Baixa")[0],
-                    transfer_area=location,
+                    recomission_transfer_area=TransferAreas.objects.get(pk=location_id),
+                    recomission_building=building,
+                    recomission_room=room,
+                    recomission_hall=hall,
+                    recomission_shelf=shelf,
                     write_off_date=timezone.now(),
                     observations="Retorno ao estoque",
-                   write_off_destination=write_off_destination, 
+                    write_off_destination=None,
                 )
-                product_unit.write_off = False
-                product_unit.location = location
+
+                # Atualize os campos da product_unit
+                product_unit.location_id = location_id
+                product_unit.building_id = building_id
+                product_unit.room_id = room_id
+                product_unit.hall_id = hall_id
+                product_unit.shelf_id = shelf_id
+            else:
+                # Caso não haja shelf selecionada
+                Write_off.objects.create(
+                    product_unit=product_unit,
+                    origin=TransferAreas.objects.get_or_create(name="Baixa")[0],
+                    recomission_transfer_area=TransferAreas.objects.get(pk=location_id),
+                    write_off_date=timezone.now(),
+                    observations="Retorno ao estoque",
+                    write_off_destination=None,
+                )
+
+                # Atualize apenas a localização da product_unit
+                product_unit.location_id = location_id
+                product_unit.building = None
+                product_unit.room = None
+                product_unit.hall = None
                 product_unit.shelf = None
         else:
-            destination_id = request.POST.get('destination')
+            destination_id = request.POST.get('location')
+            building_id = request.POST.get('building')
+            room_id = request.POST.get('room')
+            hall_id = request.POST.get('hall')
+            shelf_id = request.POST.get('shelf')
             observations = request.POST.get('observations')
             
             origin = product_unit.location
-            destination = Shelf.objects.get(pk=destination_id)
-            
-            StockTransfer.objects.create(
-                product_unit=product_unit,
-                origin=origin,
-                destination=destination,
-                transfer_date=date.today(),
-                observations=observations,
-            )
-            
-            product_unit.location = destination
+            destination = TransferAreas.objects.get(pk=destination_id)
+
+            if not product_unit.shelf or not shelf_id :
+                
+                StockTransfer.objects.create(
+                    product_unit=product_unit,
+                    origin_transfer_area=origin,
+                    destination_transfer_area=destination,
+                    transfer_date=date.today(),
+                    observations=observations,
+                )
+                
+                product_unit.location = destination
+
+            else:
+                building = Building.objects.get(pk=building_id)
+                room = Room.objects.get(pk=room_id)
+                hall = Hall.objects.get(pk=hall_id)
+                shelf = Shelf.objects.get(pk=shelf_id)
+                
+                StockTransfer.objects.create(
+                    product_unit=product_unit,
+                    origin_transfer_area=origin,
+                    destination_transfer_area=destination,
+                    transfer_date=date.today(),
+                    origin_shelf=product_unit.shelf,
+                    destination_building=building,
+                    destination_room=room,
+                    destination_hall=hall,
+                    destination_shelf=shelf,
+                    observations=observations,
+                )
+
+                product_unit.building = building
+                product_unit.room = room
+                product_unit.hall = hall
+                product_unit.shelf = shelf
+                product_unit.location = destination
+
+        
 
         consumption = request.POST.get('remainder')
         if consumption:
@@ -256,6 +311,7 @@ def generate_qr_codes(request):
                     data = f"http://{host}{item.get_absolute_url()}"
                     qr = qrcode.make(data, box_size=get_qr_size(size_preset))
                     qr_codes.append(qr)
+                    item.qr_code_generated = True
 
                 
                 local_now = timezone.localtime(timezone.now())

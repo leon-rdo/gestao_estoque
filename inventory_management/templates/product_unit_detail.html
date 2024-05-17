@@ -76,7 +76,8 @@
     </div>
     {% endif %}
 
-    
+    <p>Quantidade do material: {{object.weight_length}}</p>
+
     <div class="row justify-content-center align-items-center mt-4">
         <div id="qrcode" class="col-12 col-md-6 d-flex justify-content-center my-3"></div>
     </div>
@@ -100,36 +101,64 @@
                 </div>
                 <div class="modal-body">
                     <p>Tem certeza de que deseja retornar este item ao estoque?</p>
-                    <form id="back_to_stock_form" method="post" action="">
-                        {% csrf_token %}
-                        <input type="hidden" name="back_to_stock" value="True">
-                        <div class="form-group">
-                            <label for="consumption">Quantidade de material restante:</label>
-                            <input type="number" class="form-control" id="remainder" name="remainder" placeholder="Insira quanto material sobrou">
-                            <span class="text-danger remainder-error"></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="location">Localização:</label>
-                            <select name="location" id="location" class="form-select" onchange="toggleShelfVisibility()">
-                                {% for transfer_area in transfer_areas %}
-                                <option value="{{ transfer_area.id }}">{{ transfer_area }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group" id="shelfGroup" style="display: none;">
-                            <label for="shelf">Gaveta:</label>
-                            <select name="shelf" id="shelf" class="form-select">
-                                {% for shelf in shelves %}
-                                <option value="{{ shelf.id }}">{{ shelf }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button id="submit_btn" class="btn btn-success">Confirmar Retorno ao Estoque</button>
-                </div>
-                </form>
+                        <form id="back_to_stock_form" method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="back_to_stock" value="True">
+        <div class="form-group">
+            <label for="consumption">Quantidade de material restante:</label>
+            <input type="number" class="form-control" id="remainder" name="remainder" placeholder="Insira quanto material sobrou">
+            <span class="text-danger remainder-error"></span>
+        </div>
+        <div class="form-group">
+            <label for="location">Área de transferência:</label>
+            <select name="location" id="location" class="form-select">
+                <option value="" selected>---------</option>
+                {% for transfer_area in transfer_areas %}
+                <option value="{{ transfer_area.id }}">{{ transfer_area }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="display: none;" id="buildingGroup">
+            <label for="building">Loja:</label>
+            <select name="building" id="building" class="form-select">
+                <option value="" selected>---------</option>
+                {% for building in buildings %}
+                <option value="{{ building.id }}">{{ building }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="display: none;" id="roomGroup">
+            <label for="room">Sala:</label>
+            <select name="room" id="room" class="form-select">
+                <option value="" selected>---------</option>
+                {% for room in rooms %}
+                <option value="{{ room.id }}">{{ room }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="display: none;" id="hallGroup">
+            <label for="hall">Corredor:</label>
+            <select name="hall" id="hall" class="form-select">
+                <option value="" selected>---------</option>
+                {% for hall in halls %}
+                <option value="{{ hall.id }}">{{ hall }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="display: none;" id="shelfGroup">
+            <label for="shelf">Prateleira:</label>
+            <select name="shelf" id="shelf" class="form-select">
+                <option value="" selected>---------</option>
+                {% for shelf in shelves %}
+                <option value="{{ shelf.id }}">{{ shelf }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            <button id="submit_btn" class="btn btn-success">Confirmar Retorno ao Estoque</button>
+        </div>
+    </form>
             </div>
         </div>
         
@@ -190,13 +219,48 @@
             <div class="offcanvas-body">
                 <form method="post" class="row g-3">
                     {% csrf_token %}
-                    <div class="col-12">
-                        <label for="destination" class="form-label">Destino:</label>
-                        <select name="destination" id="destination" class="form-select">
+                    <div class="form-group">
+                        <label for="location">Área de transferência:</label>
+                        <select name="location" id="location" class="form-select">
+                            <option value="" selected>---------</option>
+                            {% for transfer_area in transfer_areas %}
+                            <option value="{{ transfer_area.id }}">{{ transfer_area }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: none;" id="buildingGroup">
+                        <label for="building">Loja:</label>
+                        <select name="building" id="building" class="form-select">
+                            <option value="" selected>---------</option>
+                            {% for building in buildings %}
+                            <option value="{{ building.id }}">{{ building }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: none;" id="roomGroup">
+                        <label for="room">Sala:</label>
+                        <select name="room" id="room" class="form-select">
+                            <option value="" selected>---------</option>
+                            {% for room in rooms %}
+                            <option value="{{ room.id }}">{{ room }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: none;" id="hallGroup">
+                        <label for="hall">Corredor:</label>
+                        <select name="hall" id="hall" class="form-select">
+                            <option value="" selected>---------</option>
+                            {% for hall in halls %}
+                            <option value="{{ hall.id }}">{{ hall }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: none;" id="shelfGroup">
+                        <label for="shelf">Prateleira:</label>
+                        <select name="shelf" id="shelf" class="form-select">
+                            <option value="" selected>---------</option>
                             {% for shelf in shelves %}
-                                <option value="{{ shelf.id }}">{{ shelf }}</option>
-                            {% empty %}
-                                <option value="">Nenhuma localização cadastrada</option>
+                            <option value="{{ shelf.id }}">{{ shelf }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -301,26 +365,135 @@
 
 
 <script>
-    $(document).ready(function() {
-    function toggleShelfField() {
-        var locationText = $('#location option:selected').text().trim();
-        if (locationText === "Loja") {
-            $('#shelfGroup').show(); 
+        $(document).ready(function() {
+    function updateFields() {
+        var locationSelected = $('#location option:selected').text().trim();
+        var buildingSelected = $('#building').val();
+        var roomSelected = $('#room').val();
+        var hallSelected = $('#hall').val();
+        var shelfSelected = $('#shelf').val();
+
+        if (locationSelected === "Loja") {
+            $('#buildingGroup').show();
+        } else {
+            $('#buildingGroup').hide();
+            $('#roomGroup').hide();
+            $('#hallGroup').hide();
+            $('#shelfGroup').hide();
+        }
+
+        if (buildingSelected) {
+            $('#roomGroup').show();
+            updateRooms(buildingSelected, roomSelected);
+        } else {
+            $('#roomGroup').hide();
+        }
+
+        if (roomSelected) {
+            $('#hallGroup').show();
+            updateHalls(roomSelected, hallSelected);
+        } else {
+            $('#hallGroup').hide();
+        }
+
+        if (hallSelected) {
+            $('#shelfGroup').show();
+            updateShelves(hallSelected, shelfSelected);
         } else {
             $('#shelfGroup').hide();
-            $('#shelf').val('');
         }
     }
 
-  
+    function updateRooms(buildingId, selectedRoom) {
+        if (!buildingId) {
+            return;
+        }
+
+        $.ajax({
+            url: '/get-rooms/',
+            data: {
+                'building_id': buildingId
+            },
+            success: function(data) {
+                $('#room').empty();
+                $('#room').append($('<option>').text('---------').attr('value', ''));
+                $.each(data, function(index, value) {
+                    var option = $('<option>').text(value.name).attr('value', value.id);
+                    if (value.id == selectedRoom) {
+                        option.attr('selected', 'selected');
+                    }
+                    $('#room').append(option);
+                });
+            }
+        });
+    }
+
+    function updateHalls(roomId, selectedHall) {
+        if (!roomId) {
+            return;
+        }
+
+        $.ajax({
+            url: '/get-halls/',
+            data: {
+                'room_id': roomId
+            },
+            success: function(data) {
+                $('#hall').empty();
+                $('#hall').append($('<option>').text('---------').attr('value', ''));
+                $.each(data, function(index, value) {
+                    var option = $('<option>').text(value.name).attr('value', value.id);
+                    if (value.id == selectedHall) {
+                        option.attr('selected', 'selected');
+                    }
+                    $('#hall').append(option);
+                });
+            }
+        });
+    }
+
+    function updateShelves(hallId, selectedShelf) {
+        if (!hallId) {
+            return;
+        }
+
+        $.ajax({
+            url: '/get-shelves/',
+            data: {
+                'hall_id': hallId
+            },
+            success: function(data) {
+                $('#shelf').empty();
+                $('#shelf').append($('<option>').text('---------').attr('value', ''));
+                $.each(data, function(index, value) {
+                    var option = $('<option>').text(value.name).attr('value', value.id);
+                    if (value.id == selectedShelf) {
+                        option.attr('selected', 'selected');
+                    }
+                    $('#shelf').append(option);
+                });
+            }
+        });
+    }
+
     $('#location').change(function() {
-        toggleShelfField();
+        updateFields();
     });
 
-    toggleShelfField();
+    $('#building').change(function() {
+        updateFields();
+    });
+
+    $('#room').change(function() {
+        updateFields();
+    });
+
+    $('#hall').change(function() {
+        updateFields();
+    });
+
+    updateFields();  // Para a inicialização no carregamento da página
 });
-console.log( $('#shelf').val)
-console.log( $('#location').val)
 </script>
 
 {% endblock extra_scripts %}
