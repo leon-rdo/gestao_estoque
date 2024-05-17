@@ -462,7 +462,9 @@ def get_shelves(request):
 
 def get_write_off_status(request, product_unit_id):
     product_unit = get_object_or_404(ProductUnit, id=product_unit_id)
-    return JsonResponse({'write_off': product_unit.write_off})class DashboardView(TemplateView):
+    return JsonResponse({'write_off': product_unit.write_off})
+
+class DashboardView(TemplateView):
     template_name = 'admin/dashboard.html'
 
     def get_context_data(self, **kwargs):
@@ -475,7 +477,6 @@ def get_write_off_status(request, product_unit_id):
             total_quantity = ProductUnit.objects.filter(purchase_date=date).aggregate(total_quantity=Sum('quantity'))['total_quantity']
             stock_quantity_over_time.append({'date': date, 'total_quantity': total_quantity or 0})
 
-        product_quantity_by_category = Category.objects.annotate(total_quantity=Count('product')).values('name', 'total_quantity')
        
         stock_transfers = StockTransfer.objects.all()
         
@@ -496,37 +497,12 @@ def get_write_off_status(request, product_unit_id):
         movements_per_semester = df.groupby(['year', 'semester'])['id'].count()
         movements_per_year = df.groupby('year')['id'].count()
 
-        category_slug = self.request.GET.get('category_slug')
-        product_slug = self.request.GET.get('product_slug')
-        
         # Inicializar um dicionário para armazenar os valores de estoque por categoria, produto e o valor total geral
         total_stock_values = {}
         overall_value = 0
         
         # Obter todas as categorias
-        categories = Category.objects.all()
         
-        for category in categories:
-            # Calcular o valor total para a categoria atual
-            category_total = 0
-            
-            # Obter todos os produtos dentro da categoria atual
-            products = Product.objects.filter(category=category)
-            
-            category_products = {}
-            
-            for product in products:
-                # Calcular o valor total para o produto atual
-                product_units = ProductUnit.objects.filter(product=product)
-                product_value = sum(unit.meters * unit.product.price for unit in product_units)
-                category_products[product] = product_value
-                category_total += product_value
-            
-            # Adicionar o valor total da categoria ao dicionário total_stock_values
-            total_stock_values[category] = {'total': category_total, 'products': category_products}
-            
-            # Adicionar o valor total da categoria ao valor geral
-            overall_value += category_total
         
 
         write_off_products = ProductUnit.objects.filter(write_off=True)
@@ -575,7 +551,6 @@ def get_write_off_status(request, product_unit_id):
         context['movements_per_month'] = movements_per_month
         context['movements_per_quarter'] = movements_per_quarter
         context['movements_per_semester'] = movements_per_semester
-        context['movements_per_year'] = movements_per_year
-        context['product_quantity_by_category'] = product_quantity_by_category    
+        context['movements_per_year'] = movements_per_year  
         context['stock_quantity_over_time'] = stock_quantity_over_time[::-1]
         return context

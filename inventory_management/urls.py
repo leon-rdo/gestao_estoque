@@ -18,5 +18,5 @@ urlpatterns = [
     path('get-halls/', views.get_halls, name='get_halls'),
     path('get-shelves/', views.get_shelves, name='get_shelves'),
     path('get-write-off-status/<uuid:product_unit_id>/', get_write_off_status, name='get_write_off_status'),
-        path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('dashboard/', DashboardView.as_view(), name='dashboard'),
 ]
