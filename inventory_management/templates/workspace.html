@@ -11,7 +11,7 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Nome</th>
+                    <th>Produto</th>
                     <th>Identificador</th>
                     <th>Ações</th>
                 </tr>
@@ -42,17 +42,17 @@
         <div class="col-12 g-3">
             <div class="row justify-content-center align-items-center">
                 <div class="col-md-4 col-12 mb-2">
-                    <button type="button" class="btn btn-success w-100" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
+                    <button type="button" class="btn btn-success w-100 {% if object_list %} {% else %} disabled {% endif %} " data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
                         <i class="bi bi-arrow-up-circle"></i> Transferir produtos
                     </button>
                 </div>   
                 <div class="col-md-4 col-12 mb-2">
-                    <button type="button" class="btn btn-warning w-100" data-toggle="modal" data-target="#confirmationModalBaixa">
+                    <button type="button" class="btn btn-warning w-100 {% if object_list %} {% else %} disabled {% endif %} " data-toggle="modal" data-target="#confirmationModalBaixa">
                         <i class="bi bi-archive"></i> Baixar produtos
                     </button>
                 </div>
                 <div class="col-md-4 col-12 mb-2">
-                    <button type="button" class="btn btn-danger w-100" data-toggle="modal" data-target="#confirmationModal">
+                    <button type="button" class="btn btn-danger w-100 {% if object_list %} {% else %} disabled {% endif %} " data-toggle="modal" data-target="#confirmationModal">
                         <i class="bi bi-trash"></i> Limpar área de trabalho
                     </button>
                 </div>
@@ -66,7 +66,7 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Limpar Área de trablho</h5>
+          <h5 class="modal-title" id="exampleModalLabel">Limpar Área de trabalho</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -97,15 +97,57 @@
     <div class="offcanvas-body">
         <form method="post" class="row g-3">
             {% csrf_token %}
-            <div class="col-12">
-                
+            <div class="form-group">
+                <label for="location">Área de transferência:</label>
+                <select name="location" id="location" class="form-select">
+                    <option value="None" selected>---------</option>
+                    {% for transfer_area in transfer_areas %}
+                    <option value="{{ transfer_area.id }}">{{ transfer_area }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="display: none;" id="buildingGroup">
+                <label for="building">Loja:</label>
+                <select name="building" id="building" class="form-select">
+                    <option value="" selected>---------</option>
+                    {% for building in buildings %}
+                    <option value="{{ building.id }}">{{ building }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="display: none;" id="roomGroup">
+                <label for="room">Sala:</label>
+                <select name="room" id="room" class="form-select">
+                    <option value="" selected>---------</option>
+                    {% for room in rooms %}
+                    <option value="{{ room.id }}">{{ room }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="display: none;" id="hallGroup">
+                <label for="hall">Corredor:</label>
+                <select name="hall" id="hall" class="form-select">
+                    <option value="" selected>---------</option>
+                    {% for hall in halls %}
+                    <option value="{{ hall.id }}">{{ hall }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="display: none;" id="shelfGroup">
+                <label for="shelf">Prateleira:</label>
+                <select name="shelf" id="shelf" class="form-select">
+                    <option value="" selected>---------</option>
+                    {% for shelf in shelves %}
+                    <option value="{{ shelf.id }}">{{ shelf }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-12">
                 <label for="observations" class="form-label">Observações:</label>
                 <textarea name="observations" id="observations" class="form-control"></textarea>
             </div>
             <div class="col-12 text-center">
-                <button type="submit" class="btn btn-primary" {% if not shelves %}disabled{% endif %}><i class="bi bi-arrow-right"></i> Transferir</button>
+                <button type="submit" id="transfer_btn" class="btn btn-primary"><i class="bi bi-arrow-right"></i> Transferir</button>
             </div>
         </form>
     </div>            
@@ -122,11 +164,17 @@
         <div class="modal-body">
           Tem certeza de que deseja dar baixa nesses produtos?
           <br>
-          <div class="form-group">
-            <label for="write_off_destination" class="form-label">Destinatário da Baixa:</label>
-            <form id="write_off_form" method="post" action="">
-                {% csrf_token %}
-        </div>
+            <div class="form-group">
+                <label for="write_off_destination" class="form-label">Destinatário da Baixa:</label>
+                <form id="write_off_form" method="post" action="">
+                    {% csrf_token %}
+                    <select name="write_off_destination" id="write_off_destination" class="form-select">
+                        {% for write_off_destination in write_off_destinations %}
+                        <option value="{{ write_off_destination.id }}">{{ write_off_destination }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="write_off" value="True">
+            </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
@@ -177,11 +225,17 @@
                     if (response.reload) {
                         location.reload();
                     }
+                    if (response.transfer) {
+                        var response = JSON.parse(response);
+                        alert(response.message);
+                    }
                 }
             },
             error: function (xhr, errmsg, err) {
                 console.log(xhr.status + ": " + xhr.responseText);
-                alert(xhr.responseText);
+                var response = JSON.parse(xhr.responseText);
+                var errorMessage = response.error;
+                alert(errorMessage);
                 location.reload();
             },
         });
@@ -208,7 +262,6 @@
                 },
                 error: function (xhr, errmsg, err) {
                     console.log(xhr.status + ": " + xhr.responseText);
-                    alert("Erro ao processar a solicitação. Por favor, tente novamente mais tarde.");
                 },
             });
         });
@@ -225,6 +278,139 @@
     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 
 </script>
+
+<script>
+    $(document).ready(function() {
+function updateFields() {
+    var locationSelected = $('#location option:selected').text().trim();
+    var buildingSelected = $('#building').val();
+    var roomSelected = $('#room').val();
+    var hallSelected = $('#hall').val();
+    var shelfSelected = $('#shelf').val();
+
+    if (locationSelected === "Loja") {
+        $('#buildingGroup').show();
+    } else {
+        $('#buildingGroup').hide();
+        $('#roomGroup').hide();
+        $('#hallGroup').hide();
+        $('#shelfGroup').hide();
+    }
+
+    if (buildingSelected) {
+        $('#roomGroup').show();
+        updateRooms(buildingSelected, roomSelected);
+    } else {
+        $('#roomGroup').hide();
+    }
+
+    if (roomSelected) {
+        $('#hallGroup').show();
+        updateHalls(roomSelected, hallSelected);
+    } else {
+        $('#hallGroup').hide();
+    }
+
+    if (hallSelected) {
+        $('#shelfGroup').show();
+        updateShelves(hallSelected, shelfSelected);
+    } else {
+        $('#shelfGroup').hide();
+    }
+}
+
+function updateRooms(buildingId, selectedRoom) {
+    if (!buildingId) {
+        return;
+    }
+
+    $.ajax({
+        url: '/get-rooms/',
+        data: {
+            'building_id': buildingId
+        },
+        success: function(data) {
+            $('#room').empty();
+            $('#room').append($('<option>').text('---------').attr('value', ''));
+            $.each(data, function(index, value) {
+                var option = $('<option>').text(value.name).attr('value', value.id);
+                if (value.id == selectedRoom) {
+                    option.attr('selected', 'selected');
+                }
+                $('#room').append(option);
+            });
+        }
+    });
+}
+
+function updateHalls(roomId, selectedHall) {
+    if (!roomId) {
+        return;
+    }
+
+    $.ajax({
+        url: '/get-halls/',
+        data: {
+            'room_id': roomId
+        },
+        success: function(data) {
+            $('#hall').empty();
+            $('#hall').append($('<option>').text('---------').attr('value', ''));
+            $.each(data, function(index, value) {
+                var option = $('<option>').text(value.name).attr('value', value.id);
+                if (value.id == selectedHall) {
+                    option.attr('selected', 'selected');
+                }
+                $('#hall').append(option);
+            });
+        }
+    });
+}
+
+function updateShelves(hallId, selectedShelf) {
+    if (!hallId) {
+        return;
+    }
+
+    $.ajax({
+        url: '/get-shelves/',
+        data: {
+            'hall_id': hallId
+        },
+        success: function(data) {
+            $('#shelf').empty();
+            $('#shelf').append($('<option>').text('---------').attr('value', ''));
+            $.each(data, function(index, value) {
+                var option = $('<option>').text(value.name).attr('value', value.id);
+                if (value.id == selectedShelf) {
+                    option.attr('selected', 'selected');
+                }
+                $('#shelf').append(option);
+            });
+        }
+    });
+}
+
+$('#location').change(function() {
+    updateFields();
+});
+
+$('#building').change(function() {
+    updateFields();
+});
+
+$('#room').change(function() {
+    updateFields();
+});
+
+$('#hall').change(function() {
+    updateFields();
+});
+
+updateFields();  // Para a inicialização no carregamento da página
+});
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 {% endblock extra_scripts %}

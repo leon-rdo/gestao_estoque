@@ -76,7 +76,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'write_off' ,'qr_code_generated','purchase_date', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
-    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming', 'write_off']
+    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming',]
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
 
@@ -90,7 +90,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         if obj:
-            fieldsets.append(('QR Code', {'fields': ('qr_code_image',)}))
+            fieldsets.append(('QR Code', {'fields': ('qr_code_image', 'write_off', 'qr_code_generated')}))
         return fieldsets
     
     def shelf_or_none(self, obj):
@@ -132,7 +132,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ('location', 'qr_code_image', 'building', 'room', 'hall', 'shelf', 'purchase_date',)
+            return self.readonly_fields + ('location', 'qr_code_image', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'write_off', 'qr_code_generated',)
         return self.readonly_fields
 
     def get_urls(self):

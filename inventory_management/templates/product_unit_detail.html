@@ -191,7 +191,7 @@
                                   {% for write_off_destination in write_off_destinations %}
                                   <option value="{{ write_off_destination.id }}">{{ write_off_destination }}</option>
                                   {% endfor %}
-                              </select>
+                                </select>
                                 <input type="hidden" name="write_off" value="True">
                            
                         </div>
@@ -387,6 +387,8 @@
             updateRooms(buildingSelected, roomSelected);
         } else {
             $('#roomGroup').hide();
+            $('#hallGroup').hide();
+            $('#shelfGroup').hide();
         }
 
         if (roomSelected) {
@@ -394,6 +396,7 @@
             updateHalls(roomSelected, hallSelected);
         } else {
             $('#hallGroup').hide();
+            $('#shelfGroup').hide();
         }
 
         if (hallSelected) {

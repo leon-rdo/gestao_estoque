@@ -214,9 +214,16 @@ class StockTransfer(models.Model):
         super(StockTransfer, self).save(*args, **kwargs)
 
     def __str__(self):
+        if self.origin_shelf and self.destination_shelf:
+            return f'{self.product_unit.product.name} - {self.origin_transfer_area} - {self.origin_shelf}  -->  {self.destination_transfer_area.name} - {self.destination_shelf}'
+        
         if self.origin_shelf:
-            return f'{self.product_unit.product.name} - {self.origin_shelf} -> {self.destination_shelf}'
-        return f'{self.product_unit.product.name} - {self.origin_transfer_area} -> {self.destination_transfer_area} - {self.destination_shelf}'
+            return f'{self.product_unit.product.name} - {self.origin_transfer_area} - {self.origin_shelf}  -->  {self.destination_transfer_area.name}'
+        
+        if self.destination_shelf:
+            return f'{self.product_unit.product.name} - {self.origin_transfer_area}  -->  {self.destination_transfer_area.name} - {self.destination_shelf}'
+        
+        return f'{self.product_unit.product.name} - {self.origin_transfer_area}  -->  {self.destination_transfer_area.name}'
 
     class Meta:
         verbose_name_plural = "Transferências de Estoque"
