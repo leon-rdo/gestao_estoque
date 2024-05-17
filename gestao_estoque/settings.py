@@ -35,7 +35,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(',') if os.environ.get('ALLOWED_HOSTS') else []
 
+# ALLOWED_HOSTS = ['*']
+
 CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS').split(',') if os.environ.get('CSRF_TRUSTED_ORIGINS') else []
+
+
 
 
 # Application definition
@@ -150,6 +154,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
 ]
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -178,6 +184,7 @@ JAZZMIN_SETTINGS = {
         "inventory_management.product",
         "inventory_management.productunit",
         "inventory_management.stocktransfer",
+        "inventory_management.write_off",
         "inventory_management.building",
         "inventory_management.hall",
         "inventory_management.shelf",
@@ -197,6 +204,9 @@ JAZZMIN_SETTINGS = {
         "inventory_management.building": "fas fa-building",
         "inventory_management.hall": "fas fa-door-open",
         "inventory_management.shelf": "fas fa-box",
+        "inventory_management.color": "fas fa-palette",
+        "inventory_management.pattern": "fas fa-scroll",
+        "inventory_management.write_off": "fa fa-arrow-circle-down",
     },
 }
 
@@ -220,7 +230,6 @@ JAZZMIN_UI_TWEAKS = {
     "sidebar_nav_compact_style": False,
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": True,
-    # "theme": "pulse",
     "dark_mode_theme": None,
     "button_classes": {
         "primary": "btn-primary",

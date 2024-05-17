@@ -3,33 +3,31 @@
 {% block content %}
 <div class="row justify-content-center align-items-center g-2 py-3">
     <div class="col-12">
-        <h1 class="mb-4">{{ category.name }}</h1>
+        <h1>Produtos</h1>
         <form id="filter_form" method="GET" action="" class="mb-4">
             <div class="row">
                 <div class="col-md-12">
                     <div class="input-group">
-                        <input type="text" class="form-control" id="search" name="search" placeholder="Pesquisar produto">
+                        <input type="text" class="form-control" id="search" name="search" placeholder="Pesquisar Produto">
                         <button type="submit" class="btn btn-primary">Buscar</button>
                     </div>
                 </div>
             </div>
         </form>
-        <div class="row">
+        <div class="row icon-boxes justify-content-evenly mt-3">
             {% for product in products %}
-            <div class="col-md-6 g-4">
+            <div class="col-md-6">
                 <div class="card" data-aos="zoom-in" data-aos-delay="200" style="border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.10); border-radius:0;">
-                    <a class="card-body" href="{% url 'inventory_management:product_detail' category.slug product.slug %}">
-                        <div class="icon"><i class="bi bi-diagram-2"></i></div>
-                        <h5 class="card-title">{{ product.name }}</h5>
-                        <p class="card-text">{{ product.description }}</p>
+                    <a class="card-body" href="{% url 'inventory_management:product_detail' product.slug %}">
+                        <div class="icon"><i class="bi bi-box-seam-fill"></i></div>
+                        <h4 class="title">{{ product.name }}</h4>
+                        <p class="description">Veja os produtos desta categoria.</p>
                     </a>
                 </div>
             </div>
             {% empty %}
-            <div class="col-md-12">
-                <div class="alert alert-warning" role="alert">
-                    <strong>Opa!</strong> Nenhum produto cadastrado nesta categoria.
-                </div>
+            <div class="alert alert-warning" role="alert">
+                <strong>Opa!</strong> Nenhuma classe foi cadastrada ainda.
             </div>
             {% endfor %}
         </div>
