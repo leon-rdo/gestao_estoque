@@ -2,21 +2,46 @@
 
 {% block content %}
 {{ block.super }}
-<div class="container">
-    <h1>Quantidade Total de Produtos no Estoque ao Longo do Tempo</h1>
-    <div class="chart-container" style="position: relative; height: 300px; width: 70vw;">
-        <canvas id="stockQuantityChart"></canvas>
-    </div>
+
+<div class="container my-3">
+    <h1>Total de Metros por Produto</h1>
+    <ul>
+        {% for product in products %}
+        <li>{{ product.name }}: {{ product.total_weight_length }} metros</li>
+        {% endfor %}
+    </ul>
+</div>
+<div class="container my-3">
+    <h1>Valor Total de Produtos em Estoque</h1>
+    <p>O valor total geral de produtos em estoque é: R$ {{ overall_value }}</p>
 </div>
 
-<div class="container">
-    <h1>Quantidade de Produtos por Categoria</h1>
-    <div class="chart-container" style="position: relative; height: 300px; width: 70vw;">
-    <canvas id="productQuantityByCategoryChart"></canvas>
-</div>
+<div class="container my-3">
+    <h1>Valor Total de Produtos Baixados</h1>
+    <p>O valor total de produtos baixados é: R$ {{ total_write_off_value }}</p>
 </div>
 
-<div class="container">
+
+<div class="container my-3"> 
+    <h1>Contagem de Baixas por Produto</h1>
+    <ul>
+        {% for item in product_write_off_counts %}
+        <li>{{ item.product__name }}: {{ item.total }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+
+<div class="container my-3">
+<h1>Total de Metros por Produto</h1>
+<ul>
+    {% for product in products %}
+    <li>{{ product.name }}: {{ product.total_weight_length }} metros</li>
+    {% endfor %}
+</ul>
+</div>
+
+<div class="container my-3">
     <h1>Número de Movimentos de Estoque</h1>
     
     <h2>Por Mês</h2>
@@ -92,65 +117,20 @@
     </table>
 </div>
 
-<div class="container">
-    <h1>Valor Total de Produtos em Estoque</h1>
-    <p>O valor total geral de produtos em estoque é: R$ {{ overall_value }}</p>
-    {% if total_stock_values %}
-        {% for category, data in total_stock_values.items %}
-            <h2>{{ category }}</h2>
-            <p>Valor total da categoria: R$ {{ data.total }}</p>
-            {% if data.products %}
-                <h5>Produtos:</h5>
-                {% for product, value in data.products.items %}
-                    <p>O valor total de {{ product }} é: R$ {{ value }}</p>
-                {% endfor %}
-            {% else %}
-                <p>Nenhum produto nesta categoria.</p>
-            {% endif %}
-            <hr>
-        {% endfor %}
-        
-    {% else %}
-        <p>Nenhum dado disponível.</p>
-    {% endif %}
-</div>
 
-<div class="container">
-    <h1>Valor Total de Produtos Baixados</h1>
-    <p>O valor total de produtos baixados é: R$ {{ total_write_off_value }}</p>
-</div>
 
-<div class="container">
-    <h1>Produtos com Mais Baixas</h1>
+<div class="container my-3">
     <div>
         <h2>Gráfico de Produtos com Mais Baixas</h2>
         <img src="data:image/png;base64,{{ product_chart }}" alt="Gráfico de Produtos com Mais Baixas">
     </div>
-    <div>
-        <h2>Contagem de Baixas por Produto</h2>
-        <ul>
-            {% for item in product_write_off_counts %}
-            <li>{{ item.product__name }}: {{ item.total }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-    <div>
-        <h2>Contagem de Baixas por Categoria</h2>
-        <ul>
-            {% for item in category_write_off_counts %}
-            <li>{{ item.product__category__name }}: {{ item.total }}</li>
-            {% endfor %}
-        </ul>
-    </div>
 </div>
 
 <div class="container">
-    <h1>Total de Metros por Produto</h1>
-    <ul>
-        {% for product in products %}
-        <li>{{ product.name }}: {{ product.total_meters }} metros</li>
-        {% endfor %}
-    </ul>
+    <h1>Quantidade Total de Produtos no Estoque ao Longo do Tempo</h1>
+    <div class="chart-container" style="position: relative; height: 300px; width: 70vw;">
+        <canvas id="stockQuantityChart"></canvas>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -205,41 +185,5 @@
     });
 </script>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var ctx = document.getElementById('productQuantityByCategoryChart').getContext('2d');
-        var productQuantityByCategoryChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [
-                    {% for entry in product_quantity_by_category %}
-                        "{{ entry.name }}",
-                    {% endfor %}
-                ],
-                datasets: [{
-                    label: 'Quantidade de Produtos',
-                    data: [
-                        {% for entry in product_quantity_by_category %}
-                            {{ entry.total_quantity }},
-                        {% endfor %}
-                    ],
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        }
-                    }]
-                }
-            }
-        });
-    });
-</script>
+
 {% endblock %}

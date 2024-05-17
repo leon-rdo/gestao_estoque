@@ -76,8 +76,8 @@ class ProductDetailView(DetailView):
         except PageNotAnInteger:
             product_units_page = paginator.page(1)
         
-        total_meters = product_units.aggregate(total_meters=Sum('weight_length'))['total_meters']
-        context['total_meters'] = total_meters if total_meters else 0
+        total_weight_length = product_units.aggregate(total_weight_length=Sum('weight_length'))['total_weight_length']
+        context['total_weight_length'] = total_weight_length if total_weight_length else 0
         context['product_units'] = product_units_page 
         context['page_obj'] = product_units_page 
         
@@ -500,25 +500,28 @@ class DashboardView(TemplateView):
         # Inicializar um dicionário para armazenar os valores de estoque por categoria, produto e o valor total geral
         total_stock_values = {}
         overall_value = 0
-        
-        # Obter todas as categorias
-        
+        product_total = 0
+        products = Product.objects.all()
+        for product in products:
+                # Calcular o valor total para o produto atual
+                product_units = ProductUnit.objects.filter(product=product)
+                product_value = sum(unit.weight_length * unit.product.price for unit in product_units)
+                product_total += product_value
+
+        overall_value += product_total
         
 
         write_off_products = ProductUnit.objects.filter(write_off=True)
 
         total_write_off_value = write_off_products.annotate(
-            total_value=ExpressionWrapper(F('meters') * F('product__price'), output_field=DecimalField())
+            total_value=ExpressionWrapper(F('weight_length') * F('product__price'), output_field=DecimalField())
         ).aggregate(total=Sum('total_value'))['total']
 
         product_write_off_counts = write_off_products.values('product__name').annotate(total=Count('id')).order_by('-total')[:5]
-        category_write_off_counts = write_off_products.values('product__category__name').annotate(total=Count('id')).order_by('-total')[:5]
         
         # Preparar dados para o gráfico de barras horizontais
         product_labels = [item['product__name'] for item in product_write_off_counts]
         product_counts = [item['total'] for item in product_write_off_counts]
-        category_labels = [item['product__category__name'] for item in category_write_off_counts]
-        category_counts = [item['total'] for item in category_write_off_counts]
         
         # Gerar gráfico de barras horizontais para produtos
         fig, ax = plt.subplots()
@@ -538,13 +541,13 @@ class DashboardView(TemplateView):
 
         # Calcular o total de metros para cada produto
         for product in products:
-            total_meters = ProductUnit.objects.filter(product=product).aggregate(total=Sum('meters'))['total']
-            product.total_meters = total_meters or 0
+            total_weight_length = ProductUnit.objects.filter(product=product).aggregate(total=Sum('weight_length'))['total']
+            product.total_weight_length = total_weight_length or 0
+            
         
         context['products'] = products
         context['product_chart'] = chart_data
         context['product_write_off_counts'] = product_write_off_counts
-        context['category_write_off_counts'] = category_write_off_counts
         context['total_write_off_value'] = total_write_off_value or 0
         context['total_stock_values'] = total_stock_values
         context['overall_value'] = overall_value
