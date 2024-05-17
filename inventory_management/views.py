@@ -594,24 +594,28 @@ class DashboardView(TemplateView):
        
         stock_transfers = StockTransfer.objects.all()
         
-        # Converter os dados em um DataFrame do Pandas
+      
         df = pd.DataFrame(list(stock_transfers.values()))
         
-        # Converter a coluna 'transfer_date' para o tipo datetime
-        df['transfer_date'] = pd.to_datetime(df['transfer_date'])
-        
-        # Calcular o número de movimentos de estoque por mês, trimestre, semestre e ano
-        df['year'] = df['transfer_date'].dt.strftime('%Y')
-        df['quarter'] = df['transfer_date'].dt.quarter
-        df['semester'] = df['transfer_date'].apply(lambda x: (x.month-1)//6 + 1)
-        
-        
-        movements_per_month = df.groupby(df['transfer_date'].dt.strftime('%Y-%m'))['id'].count()
-        movements_per_quarter = df.groupby(['year', 'quarter'])['id'].count()
-        movements_per_semester = df.groupby(['year', 'semester'])['id'].count()
-        movements_per_year = df.groupby('year')['id'].count()
+        if stock_transfers:
+            df['transfer_date'] = pd.to_datetime(df['transfer_date'])
+            
 
-        # Inicializar um dicionário para armazenar os valores de estoque por categoria, produto e o valor total geral
+            df['year'] = df['transfer_date'].dt.strftime('%Y')
+            df['quarter'] = df['transfer_date'].dt.quarter
+            df['semester'] = df['transfer_date'].apply(lambda x: (x.month-1)//6 + 1)
+            
+            
+            movements_per_month = df.groupby(df['transfer_date'].dt.strftime('%Y-%m'))['id'].count()
+            movements_per_quarter = df.groupby(['year', 'quarter'])['id'].count()
+            movements_per_semester = df.groupby(['year', 'semester'])['id'].count()
+            movements_per_year = df.groupby('year')['id'].count()
+
+            context['movements_per_month'] = movements_per_month
+            context['movements_per_quarter'] = movements_per_quarter
+            context['movements_per_semester'] = movements_per_semester
+            context['movements_per_year'] = movements_per_year  
+
         total_stock_values = {}
         overall_value = 0
         product_total = 0
@@ -632,19 +636,16 @@ class DashboardView(TemplateView):
         ).aggregate(total=Sum('total_value'))['total']
 
         product_write_off_counts = write_off_products.values('product__name').annotate(total=Count('id')).order_by('-total')[:5]
-        
-        # Preparar dados para o gráfico de barras horizontais
+
         product_labels = [item['product__name'] for item in product_write_off_counts]
         product_counts = [item['total'] for item in product_write_off_counts]
-        
-        # Gerar gráfico de barras horizontais para produtos
+
         fig, ax = plt.subplots()
         ax.barh(product_labels, product_counts)
         ax.set_xlabel('Número de Baixas')
         ax.set_ylabel('Produtos')
         ax.set_title('Produtos com Mais Baixas')
         
-        # Converter o gráfico em formato base64
         buffer = io.BytesIO()
         plt.savefig(buffer, format='png')
         buffer.seek(0)
@@ -653,7 +654,6 @@ class DashboardView(TemplateView):
 
         products = Product.objects.all()
 
-        # Calcular o total de metros para cada produto
         for product in products:
             total_weight_length = ProductUnit.objects.filter(product=product).aggregate(total=Sum('weight_length'))['total']
             product.total_weight_length = total_weight_length or 0
@@ -665,9 +665,6 @@ class DashboardView(TemplateView):
         context['total_write_off_value'] = total_write_off_value or 0
         context['total_stock_values'] = total_stock_values
         context['overall_value'] = overall_value
-        context['movements_per_month'] = movements_per_month
-        context['movements_per_quarter'] = movements_per_quarter
-        context['movements_per_semester'] = movements_per_semester
-        context['movements_per_year'] = movements_per_year  
+        
         context['stock_quantity_over_time'] = stock_quantity_over_time[::-1]
         return context
