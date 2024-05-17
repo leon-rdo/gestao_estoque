@@ -199,11 +199,22 @@ class StockTransferAdmin(admin.ModelAdmin):
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
 
+
 @admin.register(Write_off)
 class WriteOffAdmin(admin.ModelAdmin):
-    list_display = ('product_unit', 'write_off_date', 'write_off_destination', 'created_by', 'created_at', 'updated_by', 'updated_at')
+    list_display = ('product_unit', 'write_off_date', 'write_off_destination_or_none', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('product_unit__product__name', 'product_unit__location__name')
     list_filter = ('write_off_date',)
+    
+
+    class Media:
+        js = ('admin/admin_write_off.js',)
+
+    def write_off_destination_or_none(self, obj):
+        if obj.write_off_destination:
+            return obj.write_off_destination
+        return "N/A"
+    write_off_destination_or_none.short_description = 'Destinatário da baixa'    
 
     def get_readonly_fields(self, request, obj=None):
         if obj:

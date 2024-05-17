@@ -19,7 +19,8 @@ from django.core.paginator import Paginator, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponseRedirect
-
+from django.urls import reverse
+from django.shortcuts import get_object_or_404
 
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -383,3 +384,7 @@ def get_shelves(request):
     shelves = Shelf.objects.filter(hall_id=hall_id)
     data = [{'id': shelf.id, 'name': shelf.name} for shelf in shelves]
     return JsonResponse(data, safe=False)
+
+def get_write_off_status(request, product_unit_id):
+    product_unit = get_object_or_404(ProductUnit, id=product_unit_id)
+    return JsonResponse({'write_off': product_unit.write_off})
