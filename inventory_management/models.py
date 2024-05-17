@@ -149,7 +149,9 @@ class ProductUnit(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='productunit_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
-
+    def mark_qr_code_generated(self):
+        self.qr_code_generated = True
+        self.save(update_fields=['qr_code_generated'])
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)

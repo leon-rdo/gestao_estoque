@@ -311,7 +311,7 @@ def generate_qr_codes(request):
                     data = f"http://{host}{item.get_absolute_url()}"
                     qr = qrcode.make(data, box_size=get_qr_size(size_preset))
                     qr_codes.append(qr)
-                    item.qr_code_generated = True
+                    item.mark_qr_code_generated()
 
                 
                 local_now = timezone.localtime(timezone.now())
@@ -346,23 +346,35 @@ def generate_qr_codes(request):
                     row = idx // columns  
                     col = idx % columns  
                     page_idx = idx // items_per_page 
-                   
+                    
+                    # Coordenadas para o texto do nome da unidade de produto
+
+                  
+
                     if size_preset == 'pequeno':
                         y_coordinate = page_height - 200 - (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 27 + x_offset + col * (qr_size + 20)
+                        text_x_coordinate = x_coordinate + 25
+                        text_y_coordinate = y_coordinate + qr_size + 10  
                     elif size_preset == 'medio':
                         y_coordinate = page_height - 200- (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 13 + x_offset + col * (qr_size + 20)
+                        text_x_coordinate = x_coordinate + 50
+                        text_y_coordinate = y_coordinate + qr_size + 10  
                     elif size_preset == 'grande':
                         y_coordinate = page_height - 250 - (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 50 + x_offset + col * (qr_size + 20)
+                        text_x_coordinate = x_coordinate + 75
+                        text_y_coordinate = y_coordinate + qr_size + 10  
 
-                    
-                    if idx > 0 and idx % items_per_page == 0:
-                        c.showPage()
+                   
+
+                    # Desenhar o nome da unidade de produto
+                    c.drawString(text_x_coordinate, text_y_coordinate, item.product.name)    
+
+                    # Se necessário, adicione aqui o código para iniciar uma nova página
 
                     c.drawInlineImage(qr, x_coordinate, y_coordinate, width=qr_size, height=qr_size)
-
                 c.showPage()
 
                 c.save()
