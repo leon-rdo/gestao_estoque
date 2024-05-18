@@ -3,7 +3,7 @@ chardet==5.2.0
 contourpy==1.2.1
 cycler==0.12.1
 Django==5.0.1
-django-jazzmin==2.6.1
+django-jazzmin==3.0.0
 fonttools==4.51.0
 kiwisolver==1.4.5
 matplotlib==3.8.4
