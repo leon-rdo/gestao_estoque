@@ -171,7 +171,6 @@ JAZZMIN_SETTINGS = {
     "changeform_format": "single",
     "topmenu_links": [
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Categorias", "url": "admin:inventory_management_category_changelist", "permissions": ["inventory_management.view_category"]},
         {"name": "Produtos", "url": "admin:inventory_management_product_changelist", "permissions": ["inventory_management.view_product"]},
         {"name": "Unidades de Produto", "url": "admin:inventory_management_productunit_changelist", "permissions": ["inventory_management.view_productunit"]},
         {"name": "Transferências", "url": "admin:inventory_management_stockTransfer_changelist", "permissions": ["inventory_management.view_stockTransfer"]},
@@ -180,7 +179,6 @@ JAZZMIN_SETTINGS = {
     
     "order_with_respect_to": [
         "inventory_management",
-        "inventory_management.category",
         "inventory_management.product",
         "inventory_management.productunit",
         "inventory_management.stocktransfer",
@@ -197,7 +195,6 @@ JAZZMIN_SETTINGS = {
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
         "inventory_management": "fas fa-boxes",
-        "inventory_management.category": "fas fa-tag",
         "inventory_management.product": "fas fa-box-open",
         "inventory_management.stocktransfer": "fas fa-exchange-alt",
         "inventory_management.productunit": "fas fa-cube",
