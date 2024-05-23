@@ -194,13 +194,17 @@ class StockTransfer(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='stock_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
     
-
-    def save(self, *args, **kwargs):
+    def clean(self):
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
         if self.product_unit.shelf != self.origin_shelf or self.product_unit.location != self.origin_transfer_area:
             raise ValidationError("A unidade de produto não está na origem.")
-        
+        if self.origin_transfer_area == self.destination_transfer_area and self.origin_shelf == self.destination_shelf:
+            raise ValidationError("A unidade de produto não pode ser transferida para o mesmo local.")
+            
+
+    def save(self, *args, **kwargs):
+        self.clean()
         self.product_unit.location = self.destination_transfer_area
         self.product_unit.building = self.destination_building
         self.product_unit.room = self.destination_room
