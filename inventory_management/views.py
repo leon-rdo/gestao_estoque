@@ -89,7 +89,7 @@ class ProductUnitDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transfer_areas'] = TransferAreas.objects.all()
+        context['transfer_areas'] = TransferAreas.objects.exclude(name="Baixa")
         context['buildings'] = Building.objects.all()
         context['rooms'] = Room.objects.all()
         context['halls'] = Hall.objects.all()
@@ -107,26 +107,17 @@ class ProductUnitDetailView(DetailView):
             product_unit.write_off = True
             write_off_destination_id = request.POST.get('write_off_destination')
             write_off_destination = WriteOffDestinations.objects.get(pk=write_off_destination_id)
-            
-            if product_unit.shelf:
-                Write_off.objects.create(
-                    product_unit=product_unit,
-                    origin= product_unit.shelf,
-                    transfer_area= TransferAreas.objects.get_or_create(name="Baixa")[0],
-                    write_off_date=timezone.now(),
-                    observations= "Baixa de produto",
-                    write_off_destination = write_off_destination
-                )
-            else:
-                Write_off.objects.create(
-                    product_unit=product_unit,
-                    origin= product_unit.location,
-                    transfer_area= TransferAreas.objects.get_or_create(name="Baixa")[0],
-                    write_off_date=timezone.now(),
-                    observations= "Baixa de produto",
-                    write_off_destination =write_off_destination
-                )    
-            
+            origin = product_unit.shelf if product_unit.shelf else product_unit.location
+
+            Write_off.objects.create(
+                product_unit=product_unit,
+                origin=origin,
+                transfer_area=TransferAreas.objects.get_or_create(name="Baixa")[0],
+                write_off_date=timezone.now(),
+                observations="Baixa de produto",
+                write_off_destination=write_off_destination
+            )
+
         elif request.POST.get('back_to_stock') == 'True':
             product_unit.write_off = False
             last_write_off = Write_off.objects.filter(product_unit=product_unit).aggregate(last_write_off_date=Max('write_off_date'))
@@ -144,7 +135,23 @@ class ProductUnitDetailView(DetailView):
             room_id = request.POST.get('room')
             hall_id = request.POST.get('hall')
             shelf_id = request.POST.get('shelf')
-            
+            transfer_area = TransferAreas.objects.get_or_create(name="Baixa")[0]
+
+            Write_off.objects.create(
+                product_unit=product_unit,
+                origin=transfer_area,
+                recomission_transfer_area=location,
+                write_off_date=timezone.now(),
+                observations="Retorno ao estoque",
+                write_off_destination=location,
+                
+            )
+
+            product_unit.location_id = location_id
+            product_unit.building = None
+            product_unit.room = None
+            product_unit.hall = None
+            product_unit.shelf = None
 
             if shelf_id:
                 building = Building.objects.get(pk=building_id)
@@ -152,11 +159,8 @@ class ProductUnitDetailView(DetailView):
                 hall = Hall.objects.get(pk=hall_id)
                 shelf = Shelf.objects.get(pk=shelf_id)
 
-                # Crie o objeto Write_off com os campos preenchidos
                 Write_off.objects.create(
                     product_unit=product_unit,
-                    origin=TransferAreas.objects.get_or_create(name="Baixa")[0],
-                    recomission_transfer_area=TransferAreas.objects.get(pk=location_id),
                     recomission_building=building,
                     recomission_room=room,
                     recomission_hall=hall,
@@ -166,29 +170,11 @@ class ProductUnitDetailView(DetailView):
                     write_off_destination=None,
                 )
 
-                # Atualize os campos da product_unit
-                product_unit.location_id = location_id
                 product_unit.building_id = building_id
                 product_unit.room_id = room_id
                 product_unit.hall_id = hall_id
                 product_unit.shelf_id = shelf_id
-            else:
-                # Caso não haja shelf selecionada
-                Write_off.objects.create(
-                    product_unit=product_unit,
-                    origin=TransferAreas.objects.get_or_create(name="Baixa")[0],
-                    recomission_transfer_area=TransferAreas.objects.get(pk=location_id),
-                    write_off_date=timezone.now(),
-                    observations="Retorno ao estoque",
-                    write_off_destination=None,
-                )
 
-                # Atualize apenas a localização da product_unit
-                product_unit.location_id = location_id
-                product_unit.building = None
-                product_unit.room = None
-                product_unit.hall = None
-                product_unit.shelf = None
         else:
             destination_id = request.POST.get('location')
             building_id = request.POST.get('building')
@@ -200,19 +186,17 @@ class ProductUnitDetailView(DetailView):
             origin = product_unit.location
             destination = TransferAreas.objects.get(pk=destination_id)
 
-            if not product_unit.shelf or not shelf_id :
-                
-                StockTransfer.objects.create(
-                    product_unit=product_unit,
-                    origin_transfer_area=origin,
-                    destination_transfer_area=destination,
-                    transfer_date=date.today(),
-                    observations=observations,
-                )
-                
-                product_unit.location = destination
+            StockTransfer.objects.create(
+                product_unit=product_unit,
+                origin_transfer_area=origin,
+                destination_transfer_area=destination,
+                transfer_date=date.today(),
+                observations=observations,
+            )
 
-            else:
+            product_unit.location = destination
+
+            if product_unit.shelf and shelf_id:
                 building = Building.objects.get(pk=building_id)
                 room = Room.objects.get(pk=room_id)
                 hall = Hall.objects.get(pk=hall_id)
@@ -235,33 +219,26 @@ class ProductUnitDetailView(DetailView):
                 product_unit.room = room
                 product_unit.hall = hall
                 product_unit.shelf = shelf
-                product_unit.location = destination
-
-        
 
         consumption = request.POST.get('remainder')
         if consumption:
-                consumption_decimal = Decimal(consumption)
+            consumption_decimal = Decimal(consumption)
 
-                if consumption_decimal > product_unit.weight_length:
-                    return JsonResponse({'remainder': "O consumo não pode ser maior que o peso/tamanho antes da subtração."}, status=400)
-                
-                remainder = consumption_decimal
-                if remainder < 0:
-                    return JsonResponse({'remainder': "O peso/tamanho depois da subtração não pode ser negativo."}, status=400)
-                
-                try:
-                    ClothConsumption.objects.create(
-                        product_unit=product_unit,
-                        weight_length_before=product_unit.weight_length,
-                        remainder= consumption_decimal
-                    )
-                except ValidationError as e:
-                    return JsonResponse({'remainder': e.message}, status=400)
+            if consumption_decimal > product_unit.weight_length:
+                return JsonResponse({'remainder': "O consumo não pode ser maior que o peso/tamanho antes da subtração."}, status=400)
 
+            if consumption_decimal < 0:
+                return JsonResponse({'remainder': "O peso/tamanho depois da subtração não pode ser negativo."}, status=400)
+
+            ClothConsumption.objects.create(
+                product_unit=product_unit,
+                weight_length_before=product_unit.weight_length,
+                remainder=consumption_decimal
+            )
 
         product_unit.save()
         return redirect(product_unit.get_absolute_url())
+
     
 class ScanQRView(TemplateView):
     template_name = 'scan_qr.html'
