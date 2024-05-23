@@ -151,7 +151,33 @@ class ProductUnitDetailView(DetailView):
         shelf_id = request.POST.get('shelf')
         transfer_area = TransferAreas.objects.get_or_create(name="Baixa")[0]
 
-        Write_off.objects.create(
+        if location.name == "Loja":
+            building = Building.objects.get(pk=building_id)
+            room = Room.objects.get(pk=room_id)
+            hall = Hall.objects.get(pk=hall_id)
+            shelf = Shelf.objects.get(pk=shelf_id)
+            transfer_area = TransferAreas.objects.get_or_create(name="Baixa")[0]
+
+            Write_off.objects.create(
+                product_unit=product_unit,
+                origin=transfer_area,
+                recomission_transfer_area=location,
+                recomission_building=building,
+                recomission_room=room,
+                recomission_hall=hall,
+                recomission_shelf=shelf,
+                write_off_date=timezone.now(),
+                observations="Retorno ao estoque",
+                transfer_area=None,
+                write_off_destination=None,
+                created_by = request.user,
+            )
+            product_unit.building_id = building_id
+            product_unit.room_id = room_id
+            product_unit.hall_id = hall_id
+            product_unit.shelf_id = shelf_id
+        else:
+            Write_off.objects.create(
             product_unit=product_unit,
             origin=transfer_area,
             recomission_transfer_area=location,
@@ -168,30 +194,6 @@ class ProductUnitDetailView(DetailView):
         product_unit.hall = None
         product_unit.shelf = None
 
-        if location.name == "Loja":
-            building = Building.objects.get(pk=building_id)
-            room = Room.objects.get(pk=room_id)
-            hall = Hall.objects.get(pk=hall_id)
-            shelf = Shelf.objects.get(pk=shelf_id)
-
-            Write_off.objects.create(
-                product_unit=product_unit,
-                recomission_transfer_area=location,
-                recomission_building=building,
-                recomission_room=room,
-                recomission_hall=hall,
-                recomission_shelf=shelf,
-                write_off_date=timezone.now(),
-                observations="Retorno ao estoque",
-                transfer_area=None,
-                write_off_destination=None,
-                created_by = request.user,
-            )
-
-            product_unit.building_id = building_id
-            product_unit.room_id = room_id
-            product_unit.hall_id = hall_id
-            product_unit.shelf_id = shelf_id
 
         consumption = request.POST.get('remainder')
         if consumption:

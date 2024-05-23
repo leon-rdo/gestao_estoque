@@ -41,7 +41,7 @@
                         {% if write_off.transfer_area %}
                             <td>{{ write_off.transfer_area}}</td>
                         {% else %}
-                            <td>{{ write_off.recomission_transfer_area}}</td>
+                            <td>{{ write_off.recomission_transfer_area}} {% if write_off.recomission_shelf %} {{ write_off.recomission_shelf }} {% endif %} </td>
                         {% endif %}
                         <td>{{ write_off.observations }}</td>
                         {% if write_off.created_by %}
