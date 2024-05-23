@@ -104,121 +104,94 @@ class ProductUnitDetailView(DetailView):
         product_unit = self.get_object()
 
         if 'write_off' in request.POST:
-            product_unit.write_off = True
-            write_off_destination_id = request.POST.get('write_off_destination')
-            write_off_destination = WriteOffDestinations.objects.get(pk=write_off_destination_id)
-            origin = product_unit.shelf if product_unit.shelf else product_unit.location
+            return self.write_off(request, product_unit)
+        
+        if request.POST.get('back_to_stock') == 'True':
+            return self.back_to_stock(request, product_unit)
+
+        if request.POST.get('transfer_stock') == 'True':
+            return self.stock_transfer(request, product_unit)
+        
+        return redirect(product_unit.get_absolute_url())
+    
+    def write_off(self, request, product_unit):
+        product_unit.write_off = True
+        write_off_destination_id = request.POST.get('write_off_destination')
+        write_off_destination = WriteOffDestinations.objects.get(pk=write_off_destination_id)
+        origin = product_unit.shelf if product_unit.shelf else product_unit.location
+
+        Write_off.objects.create(
+            product_unit=product_unit,
+            origin=origin,
+            transfer_area=TransferAreas.objects.get_or_create(name="Baixa")[0],
+            write_off_date=timezone.now(),
+            observations="Baixa de produto",
+            write_off_destination=write_off_destination
+        )
+
+        product_unit.save()
+        return redirect(product_unit.get_absolute_url())
+
+    def back_to_stock(self, request, product_unit):
+        product_unit.write_off = False
+        last_write_off = Write_off.objects.filter(product_unit=product_unit).aggregate(last_write_off_date=Max('write_off_date'))
+        last_write_off_date = last_write_off.get('last_write_off_date')
+
+        if last_write_off_date:
+            last_write_off = Write_off.objects.filter(product_unit=product_unit, write_off_date=last_write_off_date).first()
+            write_off_destination = last_write_off.write_off_destination if last_write_off.write_off_destination else None
+        else:
+            write_off_destination = None
+
+        location_id = request.POST.get('location')
+        location = TransferAreas.objects.get(pk=location_id)
+        building_id = request.POST.get('building')
+        room_id = request.POST.get('room')
+        hall_id = request.POST.get('hall')
+        shelf_id = request.POST.get('shelf')
+        transfer_area = TransferAreas.objects.get_or_create(name="Baixa")[0]
+
+        Write_off.objects.create(
+            product_unit=product_unit,
+            origin=transfer_area,
+            recomission_transfer_area=location,
+            write_off_date=timezone.now(),
+            observations="Retorno ao estoque",
+            transfer_area =None,
+            write_off_destination=None,
+            created_by = request.user,
+        )
+
+        product_unit.location_id = location_id
+        product_unit.building = None
+        product_unit.room = None
+        product_unit.hall = None
+        product_unit.shelf = None
+
+        if location.name == "Loja":
+            building = Building.objects.get(pk=building_id)
+            room = Room.objects.get(pk=room_id)
+            hall = Hall.objects.get(pk=hall_id)
+            shelf = Shelf.objects.get(pk=shelf_id)
 
             Write_off.objects.create(
                 product_unit=product_unit,
-                origin=origin,
-                transfer_area=TransferAreas.objects.get_or_create(name="Baixa")[0],
-                write_off_date=timezone.now(),
-                observations="Baixa de produto",
-                write_off_destination=write_off_destination
-            )
-
-        elif request.POST.get('back_to_stock') == 'True':
-            product_unit.write_off = False
-            last_write_off = Write_off.objects.filter(product_unit=product_unit).aggregate(last_write_off_date=Max('write_off_date'))
-            last_write_off_date = last_write_off.get('last_write_off_date')
-
-            if last_write_off_date:
-                last_write_off = Write_off.objects.filter(product_unit=product_unit, write_off_date=last_write_off_date).first()
-                write_off_destination = last_write_off.write_off_destination if last_write_off.write_off_destination else None
-            else:
-                write_off_destination = None
-
-            location_id = request.POST.get('location')
-            location = TransferAreas.objects.get(pk=location_id)
-            building_id = request.POST.get('building')
-            room_id = request.POST.get('room')
-            hall_id = request.POST.get('hall')
-            shelf_id = request.POST.get('shelf')
-            transfer_area = TransferAreas.objects.get_or_create(name="Baixa")[0]
-
-            Write_off.objects.create(
-                product_unit=product_unit,
-                origin=transfer_area,
                 recomission_transfer_area=location,
+                recomission_building=building,
+                recomission_room=room,
+                recomission_hall=hall,
+                recomission_shelf=shelf,
                 write_off_date=timezone.now(),
                 observations="Retorno ao estoque",
-                write_off_destination=location,
-                
+                transfer_area=None,
+                write_off_destination=None,
+                created_by = request.user,
             )
 
-            product_unit.location_id = location_id
-            product_unit.building = None
-            product_unit.room = None
-            product_unit.hall = None
-            product_unit.shelf = None
-
-            if shelf_id:
-                building = Building.objects.get(pk=building_id)
-                room = Room.objects.get(pk=room_id)
-                hall = Hall.objects.get(pk=hall_id)
-                shelf = Shelf.objects.get(pk=shelf_id)
-
-                Write_off.objects.create(
-                    product_unit=product_unit,
-                    recomission_building=building,
-                    recomission_room=room,
-                    recomission_hall=hall,
-                    recomission_shelf=shelf,
-                    write_off_date=timezone.now(),
-                    observations="Retorno ao estoque",
-                    write_off_destination=None,
-                )
-
-                product_unit.building_id = building_id
-                product_unit.room_id = room_id
-                product_unit.hall_id = hall_id
-                product_unit.shelf_id = shelf_id
-
-        else:
-            destination_id = request.POST.get('location')
-            building_id = request.POST.get('building')
-            room_id = request.POST.get('room')
-            hall_id = request.POST.get('hall')
-            shelf_id = request.POST.get('shelf')
-            observations = request.POST.get('observations')
-            
-            origin = product_unit.location
-            destination = TransferAreas.objects.get(pk=destination_id)
-
-            StockTransfer.objects.create(
-                product_unit=product_unit,
-                origin_transfer_area=origin,
-                destination_transfer_area=destination,
-                transfer_date=date.today(),
-                observations=observations,
-            )
-
-            product_unit.location = destination
-
-            if product_unit.shelf and shelf_id:
-                building = Building.objects.get(pk=building_id)
-                room = Room.objects.get(pk=room_id)
-                hall = Hall.objects.get(pk=hall_id)
-                shelf = Shelf.objects.get(pk=shelf_id)
-                
-                StockTransfer.objects.create(
-                    product_unit=product_unit,
-                    origin_transfer_area=origin,
-                    destination_transfer_area=destination,
-                    transfer_date=date.today(),
-                    origin_shelf=product_unit.shelf,
-                    destination_building=building,
-                    destination_room=room,
-                    destination_hall=hall,
-                    destination_shelf=shelf,
-                    observations=observations,
-                )
-
-                product_unit.building = building
-                product_unit.room = room
-                product_unit.hall = hall
-                product_unit.shelf = shelf
+            product_unit.building_id = building_id
+            product_unit.room_id = room_id
+            product_unit.hall_id = hall_id
+            product_unit.shelf_id = shelf_id
 
         consumption = request.POST.get('remainder')
         if consumption:
@@ -236,6 +209,72 @@ class ProductUnitDetailView(DetailView):
                 remainder=consumption_decimal
             )
 
+        product_unit.save()
+        return redirect(product_unit.get_absolute_url())
+
+    def stock_transfer(self, request, product_unit):
+        destination_id = request.POST.get('location')
+        building_id = request.POST.get('building')
+        room_id = request.POST.get('room')
+        hall_id = request.POST.get('hall')
+        shelf_id = request.POST.get('shelf')
+        observations = request.POST.get('observations')
+        
+        origin = product_unit.location
+        destination = TransferAreas.objects.get(pk=destination_id)
+        
+        if destination.name == "Loja":
+            building = Building.objects.get(pk=building_id)
+            room = Room.objects.get(pk=room_id)
+            hall = Hall.objects.get(pk=hall_id)
+            shelf = Shelf.objects.get(pk=shelf_id)
+        else:
+            building = None
+            room = None
+            hall = None
+            shelf = None
+        
+        if product_unit.shelf:
+            StockTransfer.objects.create(
+                product_unit=product_unit,
+                origin_transfer_area=origin,
+                origin_shelf=product_unit.shelf,
+                destination_transfer_area=destination,
+                destination_shelf=shelf,
+                destination_building=building,
+                destination_room=room,
+                destination_hall=hall,
+                transfer_date=date.today(),
+                observations=observations,
+                created_by=request.user,
+            )
+        else:
+            StockTransfer.objects.create(
+                product_unit=product_unit,
+                origin_transfer_area=origin,
+                destination_transfer_area=destination,
+                destination_shelf=shelf,
+                destination_building=building,
+                destination_room=room,
+                destination_hall=hall,
+                transfer_date=date.today(),
+                observations=observations,
+                created_by=request.user,
+            )
+        
+        product_unit.location = destination
+        
+        if destination.name == "Loja":
+            product_unit.building_id = building_id
+            product_unit.room_id = room_id
+            product_unit.hall_id = hall_id
+            product_unit.shelf_id = shelf_id
+        else:
+            product_unit.building_id = None
+            product_unit.room_id = None
+            product_unit.hall_id = None
+            product_unit.shelf_id = None
+            
         product_unit.save()
         return redirect(product_unit.get_absolute_url())
 

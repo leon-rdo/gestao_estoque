@@ -196,13 +196,9 @@ class StockTransfer(models.Model):
     
 
     def save(self, *args, **kwargs):
-        if not self.product_unit.shelf and self.product_unit.location == self.destination_transfer_area:
-            raise ValidationError("Origem e destino não podem ser iguais.")
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
         if self.product_unit.shelf != self.origin_shelf or self.product_unit.location != self.origin_transfer_area:
-            raise ValidationError("A unidade de produto não está na origem.")
-        if not self.product_unit.shelf and self.origin_shelf:
             raise ValidationError("A unidade de produto não está na origem.")
         
         self.product_unit.location = self.destination_transfer_area
