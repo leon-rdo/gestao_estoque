@@ -186,6 +186,12 @@ JAZZMIN_SETTINGS = {
         "inventory_management.building",
         "inventory_management.hall",
         "inventory_management.shelf",
+        "inventory_management.color",
+        "inventory_management.pattern",
+        "inventory_management.WriteOffDestinations",
+        "inventory_management.TransferAreas",
+        "inventory_management.WorkSpace",
+        
         "auth",
         "auth.user",
         "auth.group"
