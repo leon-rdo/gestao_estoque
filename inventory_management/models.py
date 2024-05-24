@@ -6,6 +6,8 @@ from django.utils.translation import gettext_lazy as _
 import uuid
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from django.db.models import Sum, F, FloatField
+from decimal import Decimal, ROUND_HALF_UP
 
 class Color(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -149,6 +151,7 @@ class ProductUnit(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='productunit_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
+
     def mark_qr_code_generated(self):
         self.qr_code_generated = True
         self.save(update_fields=['qr_code_generated'])
@@ -175,6 +178,29 @@ class ProductUnit(models.Model):
 
     def get_absolute_url(self):
         return reverse('inventory_management:product_unit_detail', kwargs={'product_slug':self.product.slug, 'slug': self.slug})
+    
+    @classmethod
+    def get_total_quantity(cls):
+        meters = cls.objects.filter(product__measure='m').aggregate(total_meters=Sum('weight_length'))['total_meters'] or Decimal('0')
+        centimeters_to_meters = cls.objects.filter(product__measure='cm').aggregate(
+            total_cm_to_m=Sum(F('weight_length') / 100.0, output_field=FloatField())
+        )['total_cm_to_m'] or 0.0
+        total_meters = meters + Decimal(centimeters_to_meters)
+
+        kilograms = cls.objects.filter(product__measure='kg').aggregate(total_kilograms=Sum('weight_length'))['total_kilograms'] or Decimal('0')
+        grams_to_kilograms = cls.objects.filter(product__measure='g').aggregate(
+            total_g_to_kg=Sum(F('weight_length') / 1000.0, output_field=FloatField())
+        )['total_g_to_kg'] or 0.0
+        total_kilograms = kilograms + Decimal(grams_to_kilograms)
+
+
+        total_meters = total_meters.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        total_kilograms = total_kilograms.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        return {
+            'total_meters': total_meters,
+            'total_kilograms': total_kilograms
+        }
 
 
 class StockTransfer(models.Model):

@@ -28,6 +28,7 @@ from django.utils.decorators import method_decorator
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
+from django.db.models.functions import TruncMonth
 
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -583,29 +584,37 @@ class DashboardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Filtrar unidades de produto por produto, se necessário
+        product_id = self.request.GET.get('product')
+        
+        # Se product_id não estiver definido ou for None, defina como None
+        if product_id == "":
+            product_id = None
+
+        # Filtrar unidades de produto por produto, se necessário
+        product_units = ProductUnit.objects.all()
+        if product_id is not None:
+            product_units = product_units.filter(product_id=product_id)
+
+
         # Calcular a quantidade total de produtos no estoque ao longo do tempo
         stock_quantity_over_time = []
         today = timezone.now().date()
-        for i in range(30):  # Considerar os últimos 30 dias
+        for i in range(30):
             date = today - timedelta(days=i)
-            total_quantity = ProductUnit.objects.filter(purchase_date=date).aggregate(total_quantity=Sum('quantity'))['total_quantity']
+            total_quantity = product_units.filter(purchase_date=date).aggregate(total_quantity=Sum('quantity'))['total_quantity']
             stock_quantity_over_time.append({'date': date, 'total_quantity': total_quantity or 0})
 
-       
         stock_transfers = StockTransfer.objects.all()
         
-      
-        df = pd.DataFrame(list(stock_transfers.values()))
-        
         if stock_transfers:
+            df = pd.DataFrame(list(product_units.values('transfer_date')))
             df['transfer_date'] = pd.to_datetime(df['transfer_date'])
-            
-
             df['year'] = df['transfer_date'].dt.strftime('%Y')
             df['quarter'] = df['transfer_date'].dt.quarter
-            df['semester'] = df['transfer_date'].apply(lambda x: (x.month-1)//6 + 1)
-            
-            
+            df['semester'] = df['transfer_date'].apply(lambda x: (x.month - 1) // 6 + 1)
+
             movements_per_month = df.groupby(df['transfer_date'].dt.strftime('%Y-%m'))['id'].count()
             movements_per_quarter = df.groupby(['year', 'quarter'])['id'].count()
             movements_per_semester = df.groupby(['year', 'semester'])['id'].count()
@@ -614,28 +623,25 @@ class DashboardView(TemplateView):
             context['movements_per_month'] = movements_per_month
             context['movements_per_quarter'] = movements_per_quarter
             context['movements_per_semester'] = movements_per_semester
-            context['movements_per_year'] = movements_per_year  
+            context['movements_per_year'] = movements_per_year
 
-        total_stock_values = {}
-        overall_value = 0
-        product_total = 0
-        products = Product.objects.all()
-        for product in products:
-                # Calcular o valor total para o produto atual
-                product_units = ProductUnit.objects.filter(product=product)
-                product_value = sum(unit.weight_length * unit.product.price for unit in product_units)
-                product_total += product_value
+        # Calcular o valor total do estoque
+        overall_value = product_units.aggregate(overall_value=Sum(F('weight_length') * F('product__price')))['overall_value'] or 0
 
-        overall_value += product_total
-        
-
-        write_off_products = ProductUnit.objects.filter(write_off=True)
-
-        total_write_off_value = write_off_products.annotate(
+        # Calcular o valor total dos produtos baixados
+        total_write_off_value = product_units.filter(write_off=True).annotate(
             total_value=ExpressionWrapper(F('weight_length') * F('product__price'), output_field=DecimalField())
-        ).aggregate(total=Sum('total_value'))['total']
+        ).aggregate(total=Sum('total_value'))['total'] or 0
 
-        product_write_off_counts = write_off_products.values('product__name').annotate(total=Count('id')).order_by('-total')[:5]
+        # Calcular os dados de baixa
+        write_off_data = Write_off.objects.filter(product_unit__in=product_units).annotate(
+            month=TruncMonth('write_off_date')
+        ).values('month').annotate(total=Count('id'))
+
+        # Calcular os dados para o gráfico de produtos com mais baixas
+        product_write_off_counts = product_units.filter(write_off=True).values('product__name').annotate(
+            total=Count('id')
+        ).order_by('-total')[:5]
 
         product_labels = [item['product__name'] for item in product_write_off_counts]
         product_counts = [item['total'] for item in product_write_off_counts]
@@ -645,26 +651,25 @@ class DashboardView(TemplateView):
         ax.set_xlabel('Número de Baixas')
         ax.set_ylabel('Produtos')
         ax.set_title('Produtos com Mais Baixas')
-        
+
         buffer = io.BytesIO()
         plt.savefig(buffer, format='png')
         buffer.seek(0)
         chart_data = base64.b64encode(buffer.getvalue()).decode()
         plt.close()
 
-        products = Product.objects.all()
+        total_quantities = ProductUnit.get_total_quantity()
+        context.update({
+            'total_meters': total_quantities['total_meters'],
+            'total_kilograms': total_quantities['total_kilograms'],
+            'stock_quantity_over_time': stock_quantity_over_time[::-1],
+            'write_off_data': write_off_data,
+            'products': Product.objects.all(),
+            'product_chart': chart_data,
+            'product_write_off_counts': product_write_off_counts,
+            'total_write_off_value': total_write_off_value,
+            'write_off_products_number': product_units.filter(write_off=True).count(),
+            'overall_value': overall_value,
+        })
 
-        for product in products:
-            total_weight_length = ProductUnit.objects.filter(product=product).aggregate(total=Sum('weight_length'))['total']
-            product.total_weight_length = total_weight_length or 0
-            
-        
-        context['products'] = products
-        context['product_chart'] = chart_data
-        context['product_write_off_counts'] = product_write_off_counts
-        context['total_write_off_value'] = total_write_off_value or 0
-        context['total_stock_values'] = total_stock_values
-        context['overall_value'] = overall_value
-        
-        context['stock_quantity_over_time'] = stock_quantity_over_time[::-1]
         return context
