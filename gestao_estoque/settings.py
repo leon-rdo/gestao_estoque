@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import matplotlib
+matplotlib.use('Agg')
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,11 +31,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = (os.environ.get('DEBUG') == "True")
+DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(',') if os.environ.get('ALLOWED_HOSTS') else []
 
+# ALLOWED_HOSTS = ['*']
+
 CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS').split(',') if os.environ.get('CSRF_TRUSTED_ORIGINS') else []
+
+
 
 
 # Application definition
@@ -143,10 +149,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+# STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
 ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -163,7 +171,6 @@ JAZZMIN_SETTINGS = {
     "changeform_format": "single",
     "topmenu_links": [
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Categorias", "url": "admin:inventory_management_category_changelist", "permissions": ["inventory_management.view_category"]},
         {"name": "Produtos", "url": "admin:inventory_management_product_changelist", "permissions": ["inventory_management.view_product"]},
         {"name": "Unidades de Produto", "url": "admin:inventory_management_productunit_changelist", "permissions": ["inventory_management.view_productunit"]},
         {"name": "Transferências", "url": "admin:inventory_management_stockTransfer_changelist", "permissions": ["inventory_management.view_stockTransfer"]},
@@ -172,7 +179,6 @@ JAZZMIN_SETTINGS = {
     
     "order_with_respect_to": [
         "inventory_management",
-        "inventory_management.category",
         "inventory_management.product",
         "inventory_management.productunit",
         "inventory_management.stocktransfer",
@@ -180,6 +186,12 @@ JAZZMIN_SETTINGS = {
         "inventory_management.building",
         "inventory_management.hall",
         "inventory_management.shelf",
+        "inventory_management.color",
+        "inventory_management.pattern",
+        "inventory_management.WriteOffDestinations",
+        "inventory_management.TransferAreas",
+        "inventory_management.WorkSpace",
+        
         "auth",
         "auth.user",
         "auth.group"
@@ -189,7 +201,6 @@ JAZZMIN_SETTINGS = {
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
         "inventory_management": "fas fa-boxes",
-        "inventory_management.category": "fas fa-tag",
         "inventory_management.product": "fas fa-box-open",
         "inventory_management.stocktransfer": "fas fa-exchange-alt",
         "inventory_management.productunit": "fas fa-cube",
