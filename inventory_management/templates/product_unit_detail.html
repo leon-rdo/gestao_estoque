@@ -8,7 +8,7 @@
             <h1 class="mb-4">{{ object.product }}</h1>
             <p class="mb-4">
                 <i class="bi bi-geo-alt-fill"></i>
-                <strong>Localização atual:</strong> {{ object.location }} {% if object.shelf %} - {{ object.shelf }} {% endif %}
+                {%if object.write_off%} <strong>Última Localização:</strong> {% else %} <strong>Localização Atual:</strong>{%endif%} {{ object.location }} {% if object.shelf %} - {{ object.shelf }} {% endif %}
             </p>
         </div>
     {% if object.stocktransfer_set.all or write_offs %}
@@ -31,20 +31,24 @@
                         <td>{{ transfer.origin_transfer_area }} {% if transfer.origin_shelf%} - {{transfer.origin_shelf }} {% endif %}</td>
                         <td>{{ transfer.destination_transfer_area }} {% if transfer.destination_shelf%} - {{transfer.destination_shelf }} {% endif %}</td>
                         <td>{{ transfer.observations }}</td>
-                        <td> - </td>
+                        <td> {{ transfer.created_by }} </td>
                     </tr>
                     {% endfor %}
                     {% for write_off in write_offs %}
                     <tr>
                         <td>{{ write_off.write_off_date }}</td>
                         <td>{{ write_off.origin }}</td>
-                        {% if write_off.destination %}
-                        <td>{{ write_off.destination }}</td>
+                        {% if write_off.transfer_area %}
+                            <td>{{ write_off.transfer_area}}</td>
                         {% else %}
-                        <td>{{ write_off.transfer_area}}</td>
+                            <td>{{ write_off.recomission_transfer_area}} {% if write_off.recomission_shelf %} {{ write_off.recomission_shelf }} {% endif %} </td>
                         {% endif %}
                         <td>{{ write_off.observations }}</td>
-                        <td>{{ write_off.write_off_destination}}</td>
+                        {% if write_off.created_by %}
+                            <td> {{ write_off.created_by }} </td>
+                        {% else %}
+                            <td>{{ write_off.write_off_destination}}</td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -219,6 +223,7 @@
             <div class="offcanvas-body">
                 <form method="post" class="row g-3">
                     {% csrf_token %}
+                    <input type="hidden" name="transfer_stock" value="True">
                     <div class="form-group">
                         <label for="location">Área de transferência:</label>
                         <select name="location" id="location" class="form-select">

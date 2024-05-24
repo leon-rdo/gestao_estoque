@@ -90,7 +90,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         if obj:
-            fieldsets.append(('QR Code', {'fields': ('qr_code_image', 'write_off', 'qr_code_generated')}))
+            fieldsets.append((None, {'fields': ('qr_code_image', 'write_off', 'qr_code_generated')}))
         return fieldsets
     
     def shelf_or_none(self, obj):
