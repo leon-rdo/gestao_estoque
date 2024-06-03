@@ -141,7 +141,7 @@ class ProductUnit(models.Model):
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
     weight_length = models.DecimalField("Tamanho / Peso", max_digits=10, decimal_places=2, null=False, blank=False)
-    imcoming = models.DecimalField("Rendimento", max_digits=10, decimal_places=2, null=True, blank=True)
+    incoming = models.DecimalField("Rendimento", max_digits=10, decimal_places=2, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
     qr_code_generated = models.BooleanField("QR Code Gerado?", default=False) 
     modified = models.DateTimeField("Modificado", auto_now=True)
