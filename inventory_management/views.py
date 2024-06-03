@@ -614,13 +614,11 @@ class DashboardView(TemplateView):
 
         stock_quantity_over_time = []
         today = timezone.now().date()
-        
-        # Calcular a quantidade total de produtos até hoje
+  
         total_quantity = product_units.aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
 
         for i in range(30):
             date = today - timedelta(days=i)
-            # Calcular a quantidade total de produtos até a data específica
             total_quantity_on_date = product_units.filter(purchase_date__lte=date).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
             stock_quantity_over_time.append({'date': date, 'total_quantity': total_quantity_on_date})
 

@@ -266,7 +266,7 @@ class Write_off(models.Model):
     recomission_building = models.ForeignKey('inventory_management.Building',on_delete=models.CASCADE,verbose_name="Loja de Recomissão", blank=True, null=True)
     recomission_room = models.ForeignKey('inventory_management.Room',on_delete=models.CASCADE,verbose_name="Sala de Recomissão", blank=True, null=True)
     recomission_hall = models.ForeignKey('inventory_management.Hall',on_delete=models.CASCADE,verbose_name="Corredor de Recomissão", blank=True, null=True)
-    recomission_shelf = models.ForeignKey('inventory_management.Shelf',on_delete=models.CASCADE,verbose_name="Destino da Recomissão", blank=True, null=True)
+    recomission_shelf = models.ForeignKey('inventory_management.Shelf',on_delete=models.CASCADE,verbose_name="Prateleira da Recomissão", blank=True, null=True)
     write_off_date = models.DateTimeField("Data de Baixa", auto_now_add=True)
     observations = models.TextField("Observações", blank=True, null=True)
     write_off_destination = models.ForeignKey('inventory_management.WriteOffDestinations', on_delete=models.CASCADE, verbose_name="Destinatário da Baixa", blank=True, null=True)
@@ -430,7 +430,7 @@ class ClothConsumption(models.Model):
 
 class WriteOffDestinations(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField("Nome do Funcionário", max_length=100)
+    name = models.CharField("Nome do Destinatário", max_length=100)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='writeoffdestinations_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
