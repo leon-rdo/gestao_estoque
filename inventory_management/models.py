@@ -160,7 +160,7 @@ class ProductUnit(models.Model):
         self.slug = slugify(self.id)
         super(ProductUnit, self).save(*args, **kwargs)
         for i in range(1, self.quantity):
-            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, imcoming=self.imcoming, write_off=self.write_off, created_by=self.created_by, updated_by=self.updated_by, shelf=self.shelf)
+            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, incoming=self.incoming, write_off=self.write_off, created_by=self.created_by, updated_by=self.updated_by, shelf=self.shelf)
 
         self.__class__.objects.filter(id=self.id).update(quantity=1)
 
