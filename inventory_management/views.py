@@ -603,26 +603,25 @@ class DashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Filtrar unidades de produto por produto, se necessário
         product_id = self.request.GET.get('product')
         
-        # Se product_id não estiver definido ou for None, defina como None
         if product_id == "":
             product_id = None
 
-        # Filtrar unidades de produto por produto, se necessário
         product_units = ProductUnit.objects.all()
         if product_id is not None:
             product_units = product_units.filter(product_id=product_id)
 
-
-        # Calcular a quantidade total de produtos no estoque ao longo do tempo
         stock_quantity_over_time = []
         today = timezone.now().date()
+  
+        total_quantity = product_units.aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+
         for i in range(30):
             date = today - timedelta(days=i)
-            total_quantity = product_units.filter(purchase_date=date).aggregate(total_quantity=Sum('quantity'))['total_quantity']
-            stock_quantity_over_time.append({'date': date, 'total_quantity': total_quantity or 0})
+            total_quantity_on_date = product_units.filter(purchase_date__lte=date).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+            stock_quantity_over_time.append({'date': date, 'total_quantity': total_quantity_on_date})
+
 
         stock_transfers = StockTransfer.objects.all()
         
