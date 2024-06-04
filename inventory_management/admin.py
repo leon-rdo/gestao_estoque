@@ -76,7 +76,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'write_off' ,'qr_code_generated','purchase_date', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off')
-    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'imcoming',]
+    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'incoming',]
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
 
@@ -121,6 +121,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
         if obj:
             form.base_fields['quantity'].widget = forms.HiddenInput()
             form.base_fields['weight_length'].disabled = True
+            form.base_fields['incoming'].disabled = True
         else:
             pass
         return form
@@ -132,7 +133,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ('location', 'qr_code_image', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'write_off', 'qr_code_generated',)
+            return self.readonly_fields + ('product','location', 'qr_code_image', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'write_off', 'qr_code_generated',)
         return self.readonly_fields
 
     def get_urls(self):
@@ -179,6 +180,15 @@ class StockTransferAdmin(admin.ModelAdmin):
     search_fields = ('product_unit__product__name', 'origin__name', 'destination__name')
     list_filter = ('transfer_date', 'origin_shelf', 'destination_shelf')
     fields = ['product_unit', 'origin_transfer_area', 'origin_shelf', 'destination_transfer_area','destination_building', 'destination_room', 'destination_hall', 'destination_shelf', 'transfer_date', 'observations']
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if not obj:
+            form.base_fields['origin_transfer_area'].widget = forms.HiddenInput()
+            form.base_fields['origin_shelf'].widget = forms.HiddenInput()
+        else:
+            pass
+        return form
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
