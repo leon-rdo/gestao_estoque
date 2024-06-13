@@ -138,7 +138,7 @@ class ProductUnit(models.Model):
     room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
     shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
-    purchase_date = models.DateField("Data de Compra", null=True, blank=True)
+    purchase_date = models.DateField("Data de Entrada", auto_now_add=True, null=True, editable=False)
     quantity = models.IntegerField("Quantidade", default=1)
     weight_length = models.DecimalField("Metro/Kg", max_digits=10, decimal_places=2, null=False, blank=False)
     incoming = models.DecimalField("Rendimento", max_digits=10, decimal_places=2, null=True, blank=True)
