@@ -93,6 +93,9 @@ class Product(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='product_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
+    
+    def get_measure(self):
+        return self.get_measure_display()
 
     def save(self, *args, **kwargs):
         if "liso" in self.name.lower() and self.color is None:
