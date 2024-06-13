@@ -73,10 +73,11 @@ class StockTransferInline(admin.TabularInline):
     
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'write_off' ,'qr_code_generated','purchase_date', "created_by", "created_at", "updated_by", "updated_at")
+    list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'write_off' , 'was_written_off' ,'qr_code_generated','purchase_date', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id')
-    list_filter = ('product' ,'purchase_date', 'location', 'write_off', 'qr_code_generated')
+    list_filter = ('product' ,'purchase_date', 'location', 'write_off', 'was_written_off' ,'qr_code_generated')
     fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'incoming',]
+    readonly_fields = ('purchase_date',)
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
 
@@ -102,8 +103,9 @@ class ProductUnitAdmin(admin.ModelAdmin):
     def weight_length_with_measure(self, obj):
         product_measure = obj.product.get_measure_display()
         return f"{obj.weight_length} {product_measure}"
-    weight_length_with_measure.short_description = 'Tamanho / Peso'
+    weight_length_with_measure.short_description = 'Metro/Kg'
 
+    #MUDAR URL QUANDO FOR PARA PRODUÇÃO
     def qr_code_image(self, obj):
         if obj:
             absolute_url = f"http://localhost:8000{obj.get_absolute_url()}"
@@ -122,8 +124,6 @@ class ProductUnitAdmin(admin.ModelAdmin):
             form.base_fields['quantity'].widget = forms.HiddenInput()
             form.base_fields['weight_length'].disabled = True
             form.base_fields['incoming'].disabled = True
-        else:
-            pass
         return form
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -133,7 +133,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ('product','location', 'qr_code_image', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'write_off', 'qr_code_generated',)
+            return self.readonly_fields + ('product','location', 'qr_code_image', 'building', 'room', 'hall', 'shelf', 'write_off', 'qr_code_generated',)
         return self.readonly_fields
 
     def get_urls(self):

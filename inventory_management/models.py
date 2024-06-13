@@ -139,11 +139,12 @@ class ProductUnit(models.Model):
     room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
     shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
-    purchase_date = models.DateField("Data de Entrada", auto_now_add=True, null=True, editable=False)
+    purchase_date = models.DateField("Data de Entrada", auto_now_add=True)
     quantity = models.IntegerField("Quantidade", default=1)
     weight_length = models.DecimalField("Metro/Kg", max_digits=10, decimal_places=2, null=False, blank=False)
     incoming = models.DecimalField("Rendimento", max_digits=10, decimal_places=2, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
+    was_written_off = models.BooleanField("Foi baixado?", default=False)
     qr_code_generated = models.BooleanField("QR Code Gerado?", default=False) 
     modified = models.DateTimeField("Modificado", auto_now=True)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
@@ -278,6 +279,7 @@ class Write_off(models.Model):
     
     def save(self, *args, **kwargs):
         if self.write_off_destination:
+            self.product_unit.was_written_off = True
             self.product_unit.write_off = True
         else:
             self.product_unit.write_off = False
