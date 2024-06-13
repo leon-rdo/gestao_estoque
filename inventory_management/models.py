@@ -140,7 +140,7 @@ class ProductUnit(models.Model):
     shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
     purchase_date = models.DateField("Data de Compra", null=True, blank=True)
     quantity = models.IntegerField("Quantidade", default=1)
-    weight_length = models.DecimalField("Tamanho / Peso", max_digits=10, decimal_places=2, null=False, blank=False)
+    weight_length = models.DecimalField("Metro/Kg", max_digits=10, decimal_places=2, null=False, blank=False)
     incoming = models.DecimalField("Rendimento", max_digits=10, decimal_places=2, null=True, blank=True)
     write_off = models.BooleanField("Baixado?", default=False)
     qr_code_generated = models.BooleanField("QR Code Gerado?", default=False) 
