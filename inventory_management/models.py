@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 import uuid
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.db.models import Sum, F, FloatField
 from decimal import Decimal, ROUND_HALF_UP
@@ -93,26 +93,19 @@ class Product(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='product_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
-    
+
     def get_measure(self):
         return self.get_measure_display()
 
+    def clean(self):
+        if Product.objects.filter(name__iexact=self.name).exclude(pk=self.pk).exists():
+            raise ValidationError("Esse nome já está em uso.")
+
     def save(self, *args, **kwargs):
-        if "liso" in self.name.lower() and self.color is None:
-            for color in Color.objects.all():
-                Product.objects.create(name=f"{self.name.capitalize()} {color.name}", description=self.description, price=self.price, measure=self.measure, width=self.width, composition=self.composition, image=self.image, code=self.code, ncm=self.ncm, color=color, pattern=self.pattern, created_by=self.created_by, updated_by=self.updated_by, slug=slugify(f"{self.name} {color.name}"))
-        if "estampado" in self.name.lower() and self.pattern is None:
-            for pattern in Pattern.objects.all():
-                Product.objects.create(name=f"{self.name.capitalize()} {pattern.name}", description=self.description, price=self.price, measure=self.measure, width=self.width, composition=self.composition, image=self.image, code=self.code, ncm=self.ncm, color=self.color, pattern=pattern, created_by=self.created_by, updated_by=self.updated_by, slug=slugify(f"{self.name} {pattern.name}"))
         self.slug = slugify(f"{self.name}")
         self.name = self.name.capitalize()
         super(Product, self).save(*args, **kwargs)
 
-
-    def clean(self):
-        if Product.objects.filter(name__startswith=self.name).exists():
-            raise ValidationError("Esse nome já está em uso.")
-        
     @property
     def quantity(self):
         return self.productunit_set.count()
@@ -129,7 +122,52 @@ class Product(models.Model):
     
     def get_absolute_url(self):
         return reverse('inventory_management:product_detail', kwargs={'slug': self.slug})
-    
+
+@receiver(pre_save, sender=Product)
+def validate_unique_name(sender, instance, **kwargs):
+    if not instance.pk:
+        if Product.objects.filter(name__iexact=instance.name).exists():
+            raise ValidationError("Esse nome já está em uso.")
+
+@receiver(post_save, sender=Product)
+def create_related_products(sender, instance, created, **kwargs):
+    if created:
+        if "liso" in instance.name.lower() and instance.color is None:
+            for color in Color.objects.all():
+                Product.objects.create(
+                    name=f"{instance.name.capitalize()} {color.name}",
+                    description=instance.description,
+                    price=instance.price,
+                    measure=instance.measure,
+                    width=instance.width,
+                    composition=instance.composition,
+                    image=instance.image,
+                    code=instance.code,
+                    ncm=instance.ncm,
+                    color=color,
+                    pattern=instance.pattern,
+                    created_by=instance.created_by,
+                    updated_by=instance.updated_by,
+                    slug=slugify(f"{instance.name} {color.name}")
+                )
+        if "estampado" in instance.name.lower() and instance.pattern is None:
+            for pattern in Pattern.objects.all():
+                Product.objects.create(
+                    name=f"{instance.name.capitalize()} {pattern.name}",
+                    description=instance.description,
+                    price=instance.price,
+                    measure=instance.measure,
+                    width=instance.width,
+                    composition=instance.composition,
+                    image=instance.image,
+                    code=instance.code,
+                    ncm=instance.ncm,
+                    color=instance.color,
+                    pattern=pattern,
+                    created_by=instance.created_by,
+                    updated_by=instance.updated_by,
+                    slug=slugify(f"{instance.name} {pattern.name}")
+                )
 
 def get_default_location():
     return TransferAreas.objects.get_or_create(name="Depósito")[0]
