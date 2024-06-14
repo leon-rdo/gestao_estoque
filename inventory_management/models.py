@@ -4,8 +4,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 import uuid
-from django.dispatch import receiver
-from django.db.models import Sum, F, FloatField, Q
+from django.db.models import Sum, F, FloatField
 from decimal import Decimal, ROUND_HALF_UP
 
 class Color(models.Model):

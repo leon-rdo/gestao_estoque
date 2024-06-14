@@ -105,10 +105,9 @@ class ProductUnitAdmin(admin.ModelAdmin):
         return f"{obj.weight_length} {product_measure}"
     weight_length_with_measure.short_description = 'Metro/Kg'
 
-    #MUDAR URL QUANDO FOR PARA PRODUÇÃO
     def qr_code_image(self, obj):
         if obj:
-            absolute_url = f"http://localhost:8000{obj.get_absolute_url()}"
+            absolute_url = f"{obj.get_absolute_url()}"
             qr = qrcode.make(absolute_url)
             qr_io = BytesIO()
             qr.save(qr_io, format='PNG')
