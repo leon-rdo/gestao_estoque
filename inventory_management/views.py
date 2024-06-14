@@ -449,7 +449,7 @@ class WorkSpaceView(ListView):
     def post(self, request, *args, **kwargs):
         if 'clean' in request.POST:
             WorkSpace.objects.filter(user=request.user).delete()
-            return HttpResponseRedirect(reverse('inventory_management:workspace'))
+            return JsonResponse({'success': 'Produtos removidos com sucesso', 'reload': True}, status=200)
         
         product_id = request.POST.get('product_id')
         remove = request.POST.get('remove')

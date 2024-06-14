@@ -75,7 +75,6 @@
           Tem certeza de que deseja limpar a área de trabalho?
           <br>
             <div class="form-group">
-                <label for="employee" class="form-label">Responsável:</label>
                 <form id="clean" method="post" action="">
                     {% csrf_token %}
                     <input type="hidden" name="clean" value="True">
@@ -98,11 +97,11 @@
         <form method="post" class="row g-3">
             {% csrf_token %}
             <div class="form-group">
-                <label for="location">Área de transferência:</label>
+                <label for="location">Tipo de Depósito:</label>
                 <select name="location" id="location" class="form-select">
                     <option value="None" selected>---------</option>
-                    {% for transfer_area in transfer_areas %}
-                    <option value="{{ transfer_area.id }}">{{ transfer_area }}</option>
+                    {% for storage_type in storage_types %}
+                    <option value="{{ storage_type.id }}">{{ storage_type }}</option>
                     {% endfor %}
                 </select>
             </div>
