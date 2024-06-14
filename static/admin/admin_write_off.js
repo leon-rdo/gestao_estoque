@@ -11,13 +11,13 @@ $(document).ready(function() {
             return;
         }
 
-        var locationSelected = $('#id_recomission_transfer_area option:selected').text().trim();
+        var locationSelected = $('#id_recomission_storage_type option:selected').text().trim();
         var buildingSelected = $('#id_recomission_building').val();
         var roomSelected = $('#id_recomission_room').val();
         var hallSelected = $('#id_recomission_hall').val();
         var shelfSelected = $('#id_recomission_shelf').val(); 
 
-        if (locationSelected === "Loja") {
+        if (locationSelected === "Depósito") {
             $('.field-recomission_building').show();
         } else {
             $('.field-recomission_building').hide();
@@ -117,7 +117,7 @@ $(document).ready(function() {
         });
     }
 
-    $('#id_recomission_transfer_area').change(function() {
+    $('#id_recomission_storage_type').change(function() {
         updateFields();
     });
 
@@ -146,20 +146,20 @@ $(document).ready(function() {
                 success: function(data) {
                     var writeOffStatus = data.write_off;
                     if (writeOffStatus === false) {
-                        $('.field-transfer_area').show();
+                        $('.field-storage_type').show();
                         $('.field-write_off_destination').show();
-                        $('.field-recomission_transfer_area').hide();
+                        $('.field-recomission_storage_type').hide();
                     } else {
-                        $('.field-transfer_area').hide();
+                        $('.field-storage_type').hide();
                         $('.field-write_off_destination').hide();
-                        $('.field-recomission_transfer_area').show();
+                        $('.field-recomission_storage_type').show();
                     }
                 }
             });
         } else {
-            $('.field-transfer_area').hide();
+            $('.field-storage_type').hide();
             $('.field-write_off_destination').hide();
-            $('.field-recomission_transfer_area').hide();
+            $('.field-recomission_storage_type').hide();
             $('.field-recomission_building').hide();
             $('.field-recomission_room').hide();
             $('.field-recomission_hall').hide();

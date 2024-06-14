@@ -12,7 +12,7 @@ $(document).ready(function() {
         var hallSelected = $('#id_hall').val();
         var shelfSelected = $('#id_shelf').val(); 
 
-        if (locationSelected === "Loja") {
+        if (locationSelected === "Depósito") {
             $('.field-building').show();
         } else {
             $('.field-building').hide();

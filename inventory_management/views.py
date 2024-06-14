@@ -90,7 +90,7 @@ class ProductUnitDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transfer_areas'] = TransferAreas.objects.exclude(name="Baixa")
+        context['storage_types'] = StorageType.objects.exclude(name="Baixa")
         context['buildings'] = Building.objects.all()
         context['rooms'] = Room.objects.all()
         context['halls'] = Hall.objects.all()
@@ -124,7 +124,7 @@ class ProductUnitDetailView(DetailView):
         Write_off.objects.create(
             product_unit=product_unit,
             origin=origin,
-            transfer_area=TransferAreas.objects.get_or_create(name="Baixa")[0],
+            storage_type=StorageType.objects.get_or_create(name="Baixa")[0],
             write_off_date=timezone.now(),
             observations="Baixa de produto",
             write_off_destination=write_off_destination
@@ -145,31 +145,31 @@ class ProductUnitDetailView(DetailView):
             write_off_destination = None
 
         location_id = request.POST.get('location')
-        location = TransferAreas.objects.get(pk=location_id)
+        location = StorageType.objects.get(pk=location_id)
         building_id = request.POST.get('building')
         room_id = request.POST.get('room')
         hall_id = request.POST.get('hall')
         shelf_id = request.POST.get('shelf')
-        transfer_area = TransferAreas.objects.get_or_create(name="Baixa")[0]
+        storage_type = StorageType.objects.get_or_create(name="Baixa")[0]
 
-        if location.name == "Loja":
+        if location.name == "Depósito":
             building = Building.objects.get(pk=building_id)
             room = Room.objects.get(pk=room_id)
             hall = Hall.objects.get(pk=hall_id)
             shelf = Shelf.objects.get(pk=shelf_id)
-            transfer_area = TransferAreas.objects.get_or_create(name="Baixa")[0]
+            storage_type = StorageType.objects.get_or_create(name="Baixa")[0]
 
             Write_off.objects.create(
                 product_unit=product_unit,
-                origin=transfer_area,
-                recomission_transfer_area=location,
+                origin=storage_type,
+                recomission_storage_type=location,
                 recomission_building=building,
                 recomission_room=room,
                 recomission_hall=hall,
                 recomission_shelf=shelf,
                 write_off_date=timezone.now(),
                 observations="Retorno ao estoque",
-                transfer_area=None,
+                storage_type=None,
                 write_off_destination=None,
                 created_by = request.user,
             )
@@ -180,11 +180,11 @@ class ProductUnitDetailView(DetailView):
         else:
             Write_off.objects.create(
             product_unit=product_unit,
-            origin=transfer_area,
-            recomission_transfer_area=location,
+            origin=storage_type,
+            recomission_storage_type=location,
             write_off_date=timezone.now(),
             observations="Retorno ao estoque",
-            transfer_area =None,
+            storage_type =None,
             write_off_destination=None,
             created_by = request.user,
         )
@@ -224,9 +224,9 @@ class ProductUnitDetailView(DetailView):
         observations = request.POST.get('observations')
         
         origin = product_unit.location
-        destination = TransferAreas.objects.get(pk=destination_id)
+        destination = StorageType.objects.get(pk=destination_id)
         
-        if destination.name == "Loja":
+        if destination.name == "Depósito":
             building = Building.objects.get(pk=building_id)
             room = Room.objects.get(pk=room_id)
             hall = Hall.objects.get(pk=hall_id)
@@ -240,9 +240,9 @@ class ProductUnitDetailView(DetailView):
         if product_unit.shelf:
             StockTransfer.objects.create(
                 product_unit=product_unit,
-                origin_transfer_area=origin,
+                origin_storage_type=origin,
                 origin_shelf=product_unit.shelf,
-                destination_transfer_area=destination,
+                destination_storage_type=destination,
                 destination_shelf=shelf,
                 destination_building=building,
                 destination_room=room,
@@ -254,8 +254,8 @@ class ProductUnitDetailView(DetailView):
         else:
             StockTransfer.objects.create(
                 product_unit=product_unit,
-                origin_transfer_area=origin,
-                destination_transfer_area=destination,
+                origin_storage_type=origin,
+                destination_storage_type=destination,
                 destination_shelf=shelf,
                 destination_building=building,
                 destination_room=room,
@@ -267,7 +267,7 @@ class ProductUnitDetailView(DetailView):
         
         product_unit.location = destination
         
-        if destination.name == "Loja":
+        if destination.name == "Depósito":
             product_unit.building_id = building_id
             product_unit.room_id = room_id
             product_unit.hall_id = hall_id
@@ -433,7 +433,7 @@ class WorkSpaceView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['write_off_destinations'] = WriteOffDestinations.objects.all()
-        context['transfer_areas'] = TransferAreas.objects.exclude(name="Baixa")
+        context['storage_types'] = StorageType.objects.exclude(name="Baixa")
         context['shelves'] = Shelf.objects.all()
         context['buildings'] = Building.objects.all()
         context['rooms'] = Room.objects.all()
@@ -460,7 +460,7 @@ class WorkSpaceView(ListView):
                     Write_off.objects.create(
                         product_unit=product_unit,
                         origin= product_unit.shelf,
-                        transfer_area= TransferAreas.objects.get_or_create(name="Baixa")[0],
+                        storage_type= StorageType.objects.get_or_create(name="Baixa")[0],
                         write_off_date=timezone.now(),
                         observations= "Baixa de produto",
                         write_off_destination = write_off_destination,
@@ -470,7 +470,7 @@ class WorkSpaceView(ListView):
                     Write_off.objects.create(
                         product_unit=product_unit,
                         origin= product_unit.location,
-                        transfer_area= TransferAreas.objects.get_or_create(name="Baixa")[0],
+                        storage_type= StorageType.objects.get_or_create(name="Baixa")[0],
                         write_off_date=timezone.now(),
                         observations= "Baixa de produto",
                         write_off_destination =write_off_destination,
@@ -511,9 +511,9 @@ class WorkSpaceView(ListView):
             shelf_id = request.POST.get('shelf')
             observations = request.POST.get('observations')
 
-            destination = TransferAreas.objects.get(pk=location_id)
+            destination = StorageType.objects.get(pk=location_id)
 
-            if destination.name == "Loja":
+            if destination.name == "Depósito":
                 building = Building.objects.get(pk=building_id)
                 room = Room.objects.get(pk=room_id)
                 hall = Hall.objects.get(pk=hall_id)
@@ -530,9 +530,9 @@ class WorkSpaceView(ListView):
                 if product_unit.shelf:
                     StockTransfer.objects.create(
                         product_unit=product_unit,
-                        origin_transfer_area=product_unit.location,
+                        origin_storage_type=product_unit.location,
                         origin_shelf=product_unit.shelf,
-                        destination_transfer_area=destination,
+                        destination_storage_type=destination,
                         destination_shelf=shelf,
                         destination_building=building,
                         destination_room=room,
@@ -544,8 +544,8 @@ class WorkSpaceView(ListView):
                 else:
                     StockTransfer.objects.create(
                         product_unit=product_unit,
-                        origin_transfer_area=product_unit.location,
-                        destination_transfer_area=destination,
+                        origin_storage_type=product_unit.location,
+                        destination_storage_type=destination,
                         destination_shelf=shelf,
                         destination_building=building,
                         destination_room=room,
@@ -557,7 +557,7 @@ class WorkSpaceView(ListView):
 
                 product_unit.location = destination
 
-                if destination.name == "Loja":
+                if destination.name == "Depósito":
                     product_unit.building_id = building_id
                     product_unit.room_id = room_id
                     product_unit.hall_id = hall_id

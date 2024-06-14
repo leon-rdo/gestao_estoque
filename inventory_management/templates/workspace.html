@@ -107,7 +107,7 @@
                 </select>
             </div>
             <div class="form-group" style="display: none;" id="buildingGroup">
-                <label for="building">Loja:</label>
+                <label for="building">Depósito:</label>
                 <select name="building" id="building" class="form-select">
                     <option value="" selected>---------</option>
                     {% for building in buildings %}
@@ -288,7 +288,7 @@ function updateFields() {
     var hallSelected = $('#hall').val();
     var shelfSelected = $('#shelf').val();
 
-    if (locationSelected === "Loja") {
+    if (locationSelected === "Depósito") {
         $('#buildingGroup').show();
     } else {
         $('#buildingGroup').hide();

@@ -5,7 +5,7 @@ $(document).ready(function() {
             $.ajax({
                 url: '/get-product-location-shelf/' + selectedProductUnit + '/',
                 success: function(data) {
-                    $('#id_origin_transfer_area').val(data.location).trigger('change');
+                    $('#id_origin_storage_type').val(data.location).trigger('change');
                     $('#id_origin_shelf').val(data.shelf).trigger('change');
                 }
             });
@@ -18,13 +18,13 @@ $(document).ready(function() {
                 return;
             }
     
-            var locationSelected = $('#id_destination_transfer_area option:selected').text().trim();
+            var locationSelected = $('#id_destination_storage_type option:selected').text().trim();
             var buildingSelected = $('#id_destination_building').val();
             var roomSelected = $('#id_destination_room').val();
             var hallSelected = $('#id_destination_hall').val();
             var shelfSelected = $('#id_destination_shelf').val(); 
     
-            if (locationSelected === "Loja") {
+            if (locationSelected === "Depósito") {
                 $('.field-destination_building').show();
             } else {
                 $('.field-destination_building').hide();
@@ -124,7 +124,7 @@ $(document).ready(function() {
             });
         }
     
-        $('#id_destination_transfer_area').change(function() {
+        $('#id_destination_storage_type').change(function() {
             updateFields();
         });
     
