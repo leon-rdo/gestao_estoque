@@ -73,11 +73,10 @@ class StockTransferInline(admin.TabularInline):
     
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'write_off' , 'was_written_off' ,'qr_code_generated','purchase_date', "created_by", "created_at", "updated_by", "updated_at")
-    search_fields = ('product__name', 'location__name', 'id')
+    list_display = ('product', 'code' ,'location','shelf_or_none','weight_length_with_measure', 'write_off' , 'was_written_off' ,'qr_code_generated','purchase_date', "created_by", "created_at", "updated_by", "updated_at")
+    search_fields = ('product__name', 'location__name', 'id', 'code')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off', 'was_written_off' ,'qr_code_generated')
-    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'incoming',]
-    readonly_fields = ('purchase_date',)
+    fields = ['product' ,'location', 'building', 'room', 'hall', 'shelf', 'quantity', 'weight_length', 'incoming',]
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
 
@@ -87,11 +86,16 @@ class ProductUnitAdmin(admin.ModelAdmin):
             'admin/product_unit_admin.js',
         )
 
-    
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
+        
         if obj:
-            fieldsets.append((None, {'fields': ('qr_code_image', 'write_off', 'qr_code_generated')}))
+            last_fieldset_index = len(fieldsets) - 1 
+            last_fieldset = list(fieldsets[last_fieldset_index])
+            updated_fields = list(last_fieldset[1]['fields']) + ['purchase_date', 'code', 'qr_code_image', 'write_off', 'qr_code_generated']
+            last_fieldset[1]['fields'] = updated_fields
+            fieldsets[last_fieldset_index] = tuple(last_fieldset)
+            
         return fieldsets
     
     def shelf_or_none(self, obj):
@@ -132,7 +136,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ('product','location', 'qr_code_image', 'building', 'room', 'hall', 'shelf', 'write_off', 'qr_code_generated',)
+            return self.readonly_fields + ('product','location', 'purchase_date','code' ,'qr_code_image', 'building', 'room', 'hall', 'shelf', 'write_off', 'qr_code_generated',)
         return self.readonly_fields
 
     def get_urls(self):

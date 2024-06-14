@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.text import slugify
@@ -6,6 +6,8 @@ from django.utils.translation import gettext_lazy as _
 import uuid
 from django.db.models import Sum, F, FloatField
 from decimal import Decimal, ROUND_HALF_UP
+import string
+import secrets
 
 class Color(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -110,6 +112,7 @@ def get_default_location():
         
 class ProductUnit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code = models.CharField("Código", max_length=10, unique=True, editable=False)
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
     location = models.ForeignKey('inventory_management.StorageType',default=get_default_location, on_delete=models.CASCADE, verbose_name="Localização")
     building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Depósito", blank=True, null=True)
@@ -138,19 +141,50 @@ class ProductUnit(models.Model):
         self.save(update_fields=['qr_code_generated'])
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.id)
-        super(ProductUnit, self).save(*args, **kwargs)
-        for i in range(1, self.quantity):
-            ProductUnit.objects.create(product=self.product, location=self.location, purchase_date=self.purchase_date, weight_length=self.weight_length, incoming=self.incoming, write_off=self.write_off, created_by=self.created_by, updated_by=self.updated_by, shelf=self.shelf)
+        with transaction.atomic():
+            super(ProductUnit, self).save(*args, **kwargs)
+            if not self.code:
+                self.generate_code()
+                self.__class__.objects.filter(id=self.id).update(code=self.code)
+                
+            self.slug = slugify(f"{self.product.name}-{self.code}")
+            self.__class__.objects.filter(id=self.id).update(slug=self.slug)
+        
 
-        self.__class__.objects.filter(id=self.id).update(quantity=1)
+            for i in range(1, self.quantity):
+                new_unit = ProductUnit(
+                    product=self.product,
+                    location=self.location,
+                    purchase_date=self.purchase_date,
+                    weight_length=self.weight_length,
+                    incoming=self.incoming,
+                    write_off=self.write_off,
+                    created_by=self.created_by,
+                    updated_by=self.updated_by,
+                    shelf=self.shelf,
+                    slug= slugify(f"{self.product.name} - {self.code}")
+                )
+                new_unit.generate_code() 
+                new_unit.slug = slugify(f"{self.product.name}-{new_unit.code}")
+                new_unit.save()
+            
+            self.__class__.objects.filter(id=self.id).update(quantity=1)
 
     def clean(self):
         if self.quantity < 1:
             raise ValidationError("A quantidade deve ser maior que 0.")
-        
+    
+    def generate_code(self):
+        initial = self.product.name[0].upper()
+        string_pool = string.ascii_letters + string.digits
+        while True:
+            code = ''.join(secrets.choice(string_pool) for i in range(5))
+            if not ProductUnit.objects.filter(code=code).exists():
+                self.code = f"PRD-{initial}{code}"
+                break
+    
     def __str__(self):
-        return f'{self.product.name} - {self.slug}'
+        return self.product.name
 
     class Meta:
         verbose_name_plural = "Unidades de Produto"

@@ -51,7 +51,7 @@
                 <tr>
                     <td>
                         <a href="{% url 'inventory_management:product_unit_detail' item.product.slug item.slug %}">
-                            {{ item.product.name }} - {{ item.slug }}
+                            {{ item.product.name }} - {{ item.code }}
                         </a>
                     </td>
                     {% if item.write_off %}
