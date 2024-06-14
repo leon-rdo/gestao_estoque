@@ -13,4 +13,5 @@ class InventoryManagementConfig(AppConfig):
     verbose_name = 'Gestão de Estoque'
 
     def ready(self):
+        import inventory_management.signals
         post_migrate.connect(create_storage_type, sender=self)
