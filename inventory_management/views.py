@@ -29,6 +29,9 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import TruncMonth
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.pdfmetrics import registerFontFamily
+from reportlab.pdfbase.ttfonts import TTFont
 
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -375,27 +378,30 @@ def generate_qr_codes(request):
                     
                     # Coordenadas para o texto do nome da unidade de produto
 
-                  
+                    pdfmetrics.registerFont(TTFont('VeraBd', 'VeraBd.ttf'))
 
                     if size_preset == 'pequeno':
                         y_coordinate = page_height - 200 - (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 27 + x_offset + col * (qr_size + 20)
-                        text_x_coordinate = x_coordinate + 25
+                        text_x_coordinate = x_coordinate - 10
                         text_y_coordinate = y_coordinate + qr_size + 10  
+                        c.setFont("VeraBd", 6 )
                     elif size_preset == 'medio':
                         y_coordinate = page_height - 200- (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 13 + x_offset + col * (qr_size + 20)
-                        text_x_coordinate = x_coordinate + 50
+                        text_x_coordinate = x_coordinate
                         text_y_coordinate = y_coordinate + qr_size + 10  
+                        c.setFont("VeraBd", 8.5 )
                     elif size_preset == 'grande':
                         y_coordinate = page_height - 250 - (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 50 + x_offset + col * (qr_size + 20)
-                        text_x_coordinate = x_coordinate + 75
-                        text_y_coordinate = y_coordinate + qr_size + 10  
-
-                   
+                        text_x_coordinate = x_coordinate - 5
+                        text_y_coordinate = y_coordinate + qr_size + 10
+                        c.setFont("VeraBd", 11 )  
 
                     # Desenhar o nome da unidade de produto
+                   
+                    
                     c.drawString(text_x_coordinate, text_y_coordinate, item.product.name)    
 
                     # Se necessário, adicione aqui o código para iniciar uma nova página
