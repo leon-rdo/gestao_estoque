@@ -4,9 +4,9 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 import uuid
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
-from django.db.models import Sum, F, FloatField
+from django.db.models import Sum, F, FloatField, Q
 from decimal import Decimal, ROUND_HALF_UP
 
 class Color(models.Model):
@@ -131,7 +131,7 @@ def validate_unique_name(sender, instance, **kwargs):
             raise ValidationError("Esse nome já está em uso.")
 
 @receiver(post_save, sender=Product)
-def create_related_products(sender, instance, created, **kwargs):
+def update_or_create_related_products(sender, instance, created, **kwargs):
     if created:
         if "liso" in instance.name.lower() and instance.color is None:
             for color in Color.objects.all():
@@ -169,7 +169,45 @@ def create_related_products(sender, instance, created, **kwargs):
                     updated_by=instance.updated_by,
                     slug=slugify(f"{instance.name} {pattern.name}")
                 )
-
+    else:
+        if "liso" in instance.name.lower():
+            Product.objects.filter(
+                Q(name__icontains=instance.name) & ~Q(pk=instance.pk)  # Excluir o próprio produto original
+            ).update(
+                description=instance.description,
+                price=instance.price,
+                measure=instance.measure,
+                width=instance.width,
+                composition=instance.composition,
+                code=instance.code,
+                ncm=instance.ncm,
+                updated_by=instance.updated_by
+            )
+        if "estampado" in instance.name.lower():
+            Product.objects.filter(
+                Q(name__icontains=instance.name) & ~Q(pk=instance.pk) 
+            ).update(
+                description=instance.description,
+                price=instance.price,
+                measure=instance.measure,
+                width=instance.width,
+                composition=instance.composition,
+                code=instance.code,
+                ncm=instance.ncm,
+                updated_by=instance.updated_by
+            )
+            
+@receiver(post_delete, sender=Product)
+def delete_related_products(sender, instance, **kwargs):
+    if "liso" in instance.name.lower():
+        Product.objects.filter(
+            Q(name__icontains=instance.name) & ~Q(pk=instance.pk)
+        ).delete()
+    elif "estampado" in instance.name.lower():
+        Product.objects.filter(
+            Q(name__icontains=instance.name) & ~Q(pk=instance.pk) 
+        ).delete()
+        
 def get_default_location():
     return StorageType.objects.get_or_create(name="Hub")[0]
 
