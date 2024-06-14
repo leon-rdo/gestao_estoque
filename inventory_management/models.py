@@ -171,8 +171,11 @@ def update_or_create_related_products(sender, instance, created, **kwargs):
                 )
     else:
         if "liso" in instance.name.lower():
+            prefix = instance.name
+            if instance.color and instance.name.lower().endswith(instance.color.name.lower()):
+                prefix = instance.name[:-len(instance.color.name)].strip()
             Product.objects.filter(
-                Q(name__icontains=instance.name) & ~Q(pk=instance.pk)  # Excluir o próprio produto original
+                Q(name__icontains=prefix) & ~Q(pk=instance.pk)
             ).update(
                 description=instance.description,
                 price=instance.price,
@@ -184,8 +187,11 @@ def update_or_create_related_products(sender, instance, created, **kwargs):
                 updated_by=instance.updated_by
             )
         if "estampado" in instance.name.lower():
+            prefix = instance.name
+            if instance.pattern and instance.name.lower().endswith(instance.pattern.name.lower()):
+                prefix = instance.name[:-len(instance.pattern.name)].strip()
             Product.objects.filter(
-                Q(name__icontains=instance.name) & ~Q(pk=instance.pk) 
+                Q(name__icontains=prefix) & ~Q(pk=instance.pk) 
             ).update(
                 description=instance.description,
                 price=instance.price,
