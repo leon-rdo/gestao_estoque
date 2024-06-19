@@ -4,10 +4,8 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 import uuid
-from django.db.models import Sum, F, FloatField
+from django.db.models import Sum, F, FloatField, Max
 from decimal import Decimal, ROUND_HALF_UP
-import string
-import secrets
 
 class Color(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -142,31 +140,31 @@ class ProductUnit(models.Model):
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
-            super(ProductUnit, self).save(*args, **kwargs)
             if not self.code:
                 self.generate_code()
-                self.__class__.objects.filter(id=self.id).update(code=self.code)
-                
-            self.slug = slugify(f"{self.product.name}-{self.code}")
-            self.__class__.objects.filter(id=self.id).update(slug=self.slug)
-        
 
-            for i in range(1, self.quantity):
-                new_unit = ProductUnit(
-                    product=self.product,
-                    location=self.location,
-                    purchase_date=self.purchase_date,
-                    weight_length=self.weight_length,
-                    incoming=self.incoming,
-                    write_off=self.write_off,
-                    created_by=self.created_by,
-                    updated_by=self.updated_by,
-                    shelf=self.shelf,
-                    slug= slugify(f"{self.product.name} - {self.code}")
-                )
-                new_unit.generate_code() 
-                new_unit.slug = slugify(f"{self.product.name}-{new_unit.code}")
-                new_unit.save()
+            super(ProductUnit, self).save(*args, **kwargs)
+
+            if not self.slug:
+                self.slug = slugify(f"{self.product.name}-{self.code}")
+                self.save(update_fields=['slug'])
+
+            if self.quantity > 1:
+                for i in range(1, self.quantity):
+                    new_unit = ProductUnit.objects.create(
+                        product=self.product,
+                        location=self.location,
+                        purchase_date=self.purchase_date,
+                        weight_length=self.weight_length,
+                        incoming=self.incoming,
+                        write_off=self.write_off,
+                        created_by=self.created_by,
+                        updated_by=self.updated_by,
+                        shelf=self.shelf
+                    )
+                    new_unit.generate_code()
+                    new_unit.slug = slugify(f"{self.product.name}-{new_unit.code}")
+                    new_unit.save()
             
             self.__class__.objects.filter(id=self.id).update(quantity=1)
 
@@ -175,14 +173,21 @@ class ProductUnit(models.Model):
             raise ValidationError("A quantidade deve ser maior que 0.")
     
     def generate_code(self):
-        initial = self.product.name[0].upper()
-        string_pool = string.ascii_letters + string.digits
-        while True:
-            code = ''.join(secrets.choice(string_pool) for i in range(5))
-            if not ProductUnit.objects.filter(code=code).exists():
-                self.code = f"PRD-{initial}{code}"
-                break
-    
+        last_unit = ProductUnit.objects.aggregate(Max('code'))
+        last_code = last_unit['code__max']
+
+        if last_code:
+            last_number = int(last_code.split('-')[1]) 
+        else:
+            last_number = 0
+
+        new_number = last_number + 1
+        self.code = f"PRD-{new_number}"
+
+        while ProductUnit.objects.filter(code=self.code).exists():
+            new_number += 1
+            self.code = f"PRD-{new_number}"
+        
     def __str__(self):
         return self.product.name
 
