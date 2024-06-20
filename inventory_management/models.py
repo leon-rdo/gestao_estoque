@@ -370,6 +370,28 @@ class Building(models.Model):
         verbose_name = "Depósito"
 
 
+class Hall (models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField("Nome do Corredor", max_length=100)
+    building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Prédio")
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='hall_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='hall_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.id)
+        super(Hall, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.room} - Corredor {self.name}'
+
+    class Meta:
+        verbose_name_plural = "Corredores"
+        verbose_name = "Corredor"
+        ordering = ['name']
+
 class Room(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Sala", max_length=100)
@@ -395,28 +417,6 @@ class Room(models.Model):
         verbose_name_plural = "Salas"
         verbose_name = "Sala"
         ordering = ['building', 'name']
-
-class Hall (models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField("Nome do Corredor", max_length=100)
-    building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Prédio")
-    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
-    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='hall_created_by', null=True, editable=False)
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
-    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='hall_updated_by', null=True, editable=False)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
-
-    def save(self, *args, **kwargs):
-        self.slug = slugify(self.id)
-        super(Hall, self).save(*args, **kwargs)
-
-    def __str__(self):
-        return f'{self.room} - Corredor {self.name}'
-
-    class Meta:
-        verbose_name_plural = "Corredores"
-        verbose_name = "Corredor"
-        ordering = ['name']
         
 class Shelf (models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
