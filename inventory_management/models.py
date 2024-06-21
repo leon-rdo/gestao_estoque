@@ -380,12 +380,17 @@ class Hall (models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='hall_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
+    def clean(self):
+      if self.building.has_hall == False:
+            raise ValidationError("Esse prédio não possui corredores.")
+
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
         super(Hall, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.room} - Corredor {self.name}'
+        return f'{self.building.name} - Corredor {self.name}'
+        
 
     class Meta:
         verbose_name_plural = "Corredores"
@@ -403,6 +408,12 @@ class Rooms(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='room_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
+    def clean(self):
+        if self.building.has_room == False:
+            raise ValidationError("Esse prédio não possui salas.")
+        if self.hall and self.building.has_hall == False:
+            raise ValidationError("Esse prédio não possui corredores.")
+
     def address(self):
         return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} "
 
@@ -411,7 +422,10 @@ class Rooms(models.Model):
         super(Rooms, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.building.name} - Sala {self.name}'
+        if self.hall:
+            return f'{self.hall} - Sala {self.name}'
+        return f'{self.building} - Sala {self.name}'
+
 
     class Meta:
         verbose_name_plural = "Salas"
@@ -429,6 +443,14 @@ class Shelf (models.Model):
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='shelf_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def clean(self):
+        if self.building.has_shelf == False:
+            raise ValidationError("Esse prédio não possui prateleiras.")
+        if self.hall and self.building.has_hall == False:
+            raise ValidationError("Esse prédio não possui corredores.")
+        if self.room and self.building.has_room == False:
+            raise ValidationError("Esse prédio não possui salas.")
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
