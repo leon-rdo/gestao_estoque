@@ -249,23 +249,13 @@ class WriteOffAdmin(admin.ModelAdmin):
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
 
-class RoomInline(admin.StackedInline):
-    model = Room
-    
-    def get_extra(self, request, obj=None, **kwargs):
-        if obj:
-            return 0
-        return 1 
 
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):
     list_display = ('name', 'cep', 'street', 'number', 'complement', 'neighborhood', 'city', 'state', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('name', 'cep', 'street', 'number', 'complement', 'neighborhood', 'city', 'state')
     list_filter = ('street', 'neighborhood', 'city')
-    inlines = [
-        RoomInline,
-    ]
-    
+   
     class Media:
         js = ('admin/autocomplete_address.js',)
 
@@ -275,23 +265,9 @@ class BuildingAdmin(admin.ModelAdmin):
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
 
-@admin.register(Room)
-class RoomAdmin(admin.ModelAdmin):
-    
-    def change_view(self, request, object_id):
-        room = self.get_object(request, object_id)
-        building_id = room.building.id
-        building_change_url = reverse('admin:inventory_management_building_change', args=[building_id])
-        return HttpResponseRedirect(building_change_url)
-    
-    def has_view_permission(self, request):
-        return False
-    
-    def has_add_permission(self, request):
-        return False
-    
-    def has_change_permission(self, request):
-        return False
+@admin.register(Rooms)
+class RoomsAdmin(admin.ModelAdmin):
+    pass
 
 @admin.register(Hall)
 class HallAdmin(admin.ModelAdmin):

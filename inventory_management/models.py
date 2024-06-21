@@ -178,7 +178,7 @@ class ProductUnit(models.Model):
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
     location = models.ForeignKey('inventory_management.StorageType',default=get_default_location, on_delete=models.CASCADE, verbose_name="Localização")
     building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Depósito", blank=True, null=True)
-    room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
+    room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
     shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
     purchase_date = models.DateField("Data de Entrada", auto_now_add=True)
@@ -256,7 +256,7 @@ class StockTransfer(models.Model):
     origin_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="stocktransfer_origin_shelf", verbose_name="Prateleira de origem", blank=True, null=True)
     destination_storage_type = models.ForeignKey('inventory_management.StorageType', on_delete=models.CASCADE, verbose_name="Tipo do Depósito de Destino")
     destination_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Depósito de Destino", blank=True, null=True)
-    destination_room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala de Destino", blank=True, null=True)
+    destination_room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, verbose_name="Sala de Destino", blank=True, null=True)
     destination_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor de Destino", blank=True, null=True)
     destination_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira de Destino", blank=True, null=True)
     transfer_date = models.DateField("Data da Transferência")
@@ -310,7 +310,7 @@ class Write_off(models.Model):
     storage_type = models.ForeignKey('inventory_management.StorageType',on_delete=models.CASCADE,verbose_name="Tipo de depósito",related_name='writeoff_origin', blank=True, null=True)
     recomission_storage_type = models.ForeignKey('inventory_management.StorageType',on_delete=models.CASCADE,verbose_name="Área de Recomissão", blank=True, null=True)
     recomission_building = models.ForeignKey('inventory_management.Building',on_delete=models.CASCADE,verbose_name="Depósito de Recomissão", blank=True, null=True)
-    recomission_room = models.ForeignKey('inventory_management.Room',on_delete=models.CASCADE,verbose_name="Sala de Recomissão", blank=True, null=True)
+    recomission_room = models.ForeignKey('inventory_management.Rooms',on_delete=models.CASCADE,verbose_name="Sala de Recomissão", blank=True, null=True)
     recomission_hall = models.ForeignKey('inventory_management.Hall',on_delete=models.CASCADE,verbose_name="Corredor de Recomissão", blank=True, null=True)
     recomission_shelf = models.ForeignKey('inventory_management.Shelf',on_delete=models.CASCADE,verbose_name="Prateleira da Recomissão", blank=True, null=True)
     write_off_date = models.DateTimeField("Data de Baixa", auto_now_add=True)
@@ -392,7 +392,7 @@ class Hall (models.Model):
         verbose_name = "Corredor"
         ordering = ['name']
 
-class Room(models.Model):
+class Rooms(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Sala", max_length=100)
     building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
@@ -408,7 +408,7 @@ class Room(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
-        super(Room, self).save(*args, **kwargs)
+        super(Rooms, self).save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.building.name} - Sala {self.name}'
@@ -423,7 +423,7 @@ class Shelf (models.Model):
     name = models.CharField("Nome da Prateleira", max_length=100)
     building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Depósito")
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor")
-    room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala")
+    room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, verbose_name="Sala")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='shelf_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
