@@ -253,13 +253,16 @@ class StockTransfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
     origin_storage_type = models.ForeignKey('inventory_management.StorageType', on_delete=models.CASCADE, related_name='stocktransfer_origin', verbose_name="Origem")
+    origin_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, related_name="stocktransfer_origin_building", verbose_name="Depósito de Origem", blank=True, null=True)
+    origin_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, related_name="stocktransfer_origin_hall", verbose_name="Corredor de Origem", blank=True, null=True)
+    origin_room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, related_name="stocktransfer_origin_room", verbose_name="Sala de Origem", blank=True, null=True)
     origin_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="stocktransfer_origin_shelf", verbose_name="Prateleira de origem", blank=True, null=True)
     destination_storage_type = models.ForeignKey('inventory_management.StorageType', on_delete=models.CASCADE, verbose_name="Tipo do Depósito de Destino")
     destination_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Depósito de Destino", blank=True, null=True)
     destination_room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, verbose_name="Sala de Destino", blank=True, null=True)
     destination_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor de Destino", blank=True, null=True)
     destination_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira de Destino", blank=True, null=True)
-    transfer_date = models.DateField("Data da Transferência")
+    transfer_date = models.DateTimeField("Data da Transferência", auto_now_add= True)
     observations = models.TextField("Observações", blank=True, null=True)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='stock_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
@@ -269,19 +272,26 @@ class StockTransfer(models.Model):
     def clean(self):
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
-        if self.product_unit.shelf != self.origin_shelf or self.product_unit.location != self.origin_storage_type:
+        if self.product_unit.location != self.origin_storage_type:
             raise ValidationError("A unidade de produto não está na origem.")
-        if self.origin_storage_type == self.destination_storage_type and self.origin_shelf == self.destination_shelf:
-            raise ValidationError("A unidade de produto não pode ser transferida para o mesmo local.")
+        
             
 
     def save(self, *args, **kwargs):
         self.clean()
         self.product_unit.location = self.destination_storage_type
         self.product_unit.building = self.destination_building
-        self.product_unit.room = self.destination_room
         self.product_unit.hall = self.destination_hall
+        self.product_unit.room = self.destination_room
         self.product_unit.shelf = self.destination_shelf
+        if not self.destination_building:
+            self.product_unit.building = None
+        if not self.destination_hall:
+            self.product_unit.hall = None
+        if not self.destination_room:
+            self.product_unit.room = None
+        if not self.destination_shelf:
+            self.product_unit.shelf = None
         self.product_unit.save()
         super(StockTransfer, self).save(*args, **kwargs)
 
@@ -308,10 +318,10 @@ class Write_off(models.Model):
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
     origin = models.CharField("Origem", max_length=100, blank=True, null=True)
     storage_type = models.ForeignKey('inventory_management.StorageType',on_delete=models.CASCADE,verbose_name="Tipo de depósito",related_name='writeoff_origin', blank=True, null=True)
-    recomission_storage_type = models.ForeignKey('inventory_management.StorageType',on_delete=models.CASCADE,verbose_name="Área de Recomissão", blank=True, null=True)
+    recomission_storage_type = models.ForeignKey('inventory_management.StorageType',on_delete=models.CASCADE,verbose_name="Área de Recomissão",related_name="recomission_destination", blank=True, null=True)
     recomission_building = models.ForeignKey('inventory_management.Building',on_delete=models.CASCADE,verbose_name="Depósito de Recomissão", blank=True, null=True)
-    recomission_room = models.ForeignKey('inventory_management.Rooms',on_delete=models.CASCADE,verbose_name="Sala de Recomissão", blank=True, null=True)
     recomission_hall = models.ForeignKey('inventory_management.Hall',on_delete=models.CASCADE,verbose_name="Corredor de Recomissão", blank=True, null=True)
+    recomission_room = models.ForeignKey('inventory_management.Rooms',on_delete=models.CASCADE,verbose_name="Sala de Recomissão", blank=True, null=True)
     recomission_shelf = models.ForeignKey('inventory_management.Shelf',on_delete=models.CASCADE,verbose_name="Prateleira da Recomissão", blank=True, null=True)
     write_off_date = models.DateTimeField("Data de Baixa", auto_now_add=True)
     observations = models.TextField("Observações", blank=True, null=True)

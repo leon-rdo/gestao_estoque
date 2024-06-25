@@ -76,7 +76,7 @@ class ProductUnitAdmin(admin.ModelAdmin):
     list_display = ('product', 'location','shelf_or_none','weight_length_with_measure', 'write_off' , 'was_written_off' ,'qr_code_generated','purchase_date', "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id')
     list_filter = ('product' ,'purchase_date', 'location', 'write_off', 'was_written_off' ,'qr_code_generated')
-    fields = ['product', 'location', 'building', 'room', 'hall', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'incoming',]
+    fields = ['product', 'location', 'building', 'hall', 'room', 'shelf', 'purchase_date', 'quantity', 'weight_length', 'incoming',]
     readonly_fields = ('purchase_date',)
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
@@ -179,16 +179,9 @@ class StockTransferAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'transfer_date', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('product_unit__product__name', 'origin__name', 'destination__name')
     list_filter = ('transfer_date', 'origin_shelf', 'destination_shelf')
-    fields = ['product_unit', 'origin_storage_type', 'origin_shelf', 'destination_storage_type','destination_building', 'destination_room', 'destination_hall', 'destination_shelf', 'transfer_date', 'observations']
+    fields = ['product_unit', 'origin_storage_type','origin_building','origin_hall','origin_room', 'origin_shelf', 'destination_storage_type','destination_building', 'destination_hall', 'destination_room', 'destination_shelf', 'transfer_date', 'observations']
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if not obj:
-            form.base_fields['origin_storage_type'].widget = forms.HiddenInput()
-            form.base_fields['origin_shelf'].widget = forms.HiddenInput()
-        else:
-            pass
-        return form
+    
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -224,7 +217,7 @@ class WriteOffAdmin(admin.ModelAdmin):
         if db_field.name == "storage_type":
             kwargs["queryset"] = StorageType.objects.filter(name = "Baixa")
         if db_field.name == "recomission_storage_type":
-            kwargs["queryset"] = StorageType.objects.filter(name = "Baixa")
+            kwargs["queryset"] = StorageType.objects.exclude(name = "Baixa")
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def write_off_destination_or_none(self, obj):
@@ -265,16 +258,21 @@ class BuildingAdmin(admin.ModelAdmin):
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
 
-@admin.register(Rooms)
-class RoomsAdmin(admin.ModelAdmin):
-    pass
-
 @admin.register(Hall)
 class HallAdmin(admin.ModelAdmin):
     pass
 
+@admin.register(Rooms)
+class RoomsAdmin(admin.ModelAdmin):
+    class Media:
+        js = ('admin/building_models.js',)
+    pass
+
+
 @admin.register(Shelf)
 class ShelfAdmin(admin.ModelAdmin):
+    class Media:
+        js = ('admin/building_models.js',)
     pass
 
 @admin.register(Color)
