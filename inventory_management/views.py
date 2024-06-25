@@ -339,6 +339,7 @@ def calculate_items_per_page(page_width, page_height, qr_size, columns):
 
     return items_per_page
 
+
 def generate_qr_codes(request):
     host = request.get_host()
     if request.method == 'POST':
@@ -355,19 +356,14 @@ def generate_qr_codes(request):
                 for item in queryset:
                     data = f"http://{host}{item.get_absolute_url()}"
                     qr = qrcode.make(data, box_size=get_qr_size(size_preset))
-                    qr_codes.append(qr)
+                    qr_codes.append((qr, item))
                     item.mark_qr_code_generated()
 
-                
                 local_now = timezone.localtime(timezone.now())
                 timestamp = local_now.strftime("%d-%m-%Y_%H%M%S")
 
-               
                 unique_products = set(product_unit.product.name for product_unit in queryset)
-
-
                 products_str = '_'.join(unique_products)
-
                 filename = f"qr_codes_{products_str}_{timestamp}.pdf"
 
                 response = HttpResponse(content_type='application/pdf')
@@ -387,44 +383,46 @@ def generate_qr_codes(request):
 
                 items_per_page = calculate_items_per_page(page_width, page_height, qr_size, columns)
 
-                for idx, qr in enumerate(qr_codes):
+                pdfmetrics.registerFont(TTFont('VeraBd', 'VeraBd.ttf'))
+
+                for idx, (qr, item) in enumerate(qr_codes):
                     row = idx // columns  
                     col = idx % columns  
                     page_idx = idx // items_per_page 
-                    
-                    # Coordenadas para o texto do nome da unidade de produto
-
-                    pdfmetrics.registerFont(TTFont('VeraBd', 'VeraBd.ttf'))
 
                     if size_preset == 'pequeno':
                         y_coordinate = page_height - 200 - (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 27 + x_offset + col * (qr_size + 20)
                         text_x_coordinate = x_coordinate - 10
-                        text_y_coordinate = y_coordinate + qr_size + 10  
+                        text_y_coordinate = y_coordinate + qr_size + 2 
+                        text_x_coordinate2 = x_coordinate + 37.5
+                        text_y_coordinate2 = y_coordinate - qr_size + 100
                         c.setFont("VeraBd", 6 )
                     elif size_preset == 'medio':
-                        y_coordinate = page_height - 200- (row % (items_per_page // columns)) * (qr_size + 20)
+                        y_coordinate = page_height - 200 - (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 13 + x_offset + col * (qr_size + 20)
                         text_x_coordinate = x_coordinate
-                        text_y_coordinate = y_coordinate + qr_size + 10  
+                        text_y_coordinate = y_coordinate + qr_size + 2
+                        text_x_coordinate2 = x_coordinate + 58.5
+                        text_y_coordinate2 = y_coordinate - qr_size + 155  
                         c.setFont("VeraBd", 8.5 )
                     elif size_preset == 'grande':
                         y_coordinate = page_height - 250 - (row % (items_per_page // columns)) * (qr_size + 20)
                         x_coordinate = 50 + x_offset + col * (qr_size + 20)
                         text_x_coordinate = x_coordinate - 5
-                        text_y_coordinate = y_coordinate + qr_size + 10
+                        text_y_coordinate = y_coordinate + qr_size + 2
+                        text_x_coordinate2 = x_coordinate + 79.5
+                        text_y_coordinate2 = y_coordinate - qr_size + 210
                         c.setFont("VeraBd", 11 )  
 
-                    # Desenhar o nome da unidade de produto
-                   
-                    
+                    if idx > 0 and idx % items_per_page == 0:
+                        c.showPage()
+
                     c.drawString(text_x_coordinate, text_y_coordinate, item.product.name)    
-
-                    # Se necessário, adicione aqui o código para iniciar uma nova página
-
                     c.drawInlineImage(qr, x_coordinate, y_coordinate, width=qr_size, height=qr_size)
-                c.showPage()
+                    c.drawString(text_x_coordinate2, text_y_coordinate2, item.code)
 
+                c.showPage()
                 c.save()
                 pdf_data = buffer.getvalue()
                 buffer.close()
