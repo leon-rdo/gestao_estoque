@@ -43,7 +43,7 @@ def download_qr_codes(modeladmin, request, queryset):
     return redirect(url)
     
 
-download_qr_codes.short_description = "Fazer download dos QR Codes"
+download_qr_codes.short_description = "Gerar QR Codes"
 
 
 def write_off_products(modeladmin, request, queryset):
