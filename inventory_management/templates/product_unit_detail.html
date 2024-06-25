@@ -11,9 +11,9 @@
                 {%if object.write_off%} <strong>Última Localização:</strong> {% else %} <strong>Localização Atual:</strong>{%endif%} {{ object.location }} {% if object.shelf %} - {{ object.shelf }} {% elif object.room %} - {{object.room }} {% elif object.hall %} - {{object.hall }} {% elif object.building %} - {{object.building }} {% endif %}
             </p>
         </div>
-    {% if object.stocktransfer_set.all or write_offs %}
+    {% if object.stocktransfer_set.all %}
         <div class="col-12">
-            <h2 class="mb-3">Movimentações</h2>
+            <h2 class="mb-2">Movimentações</h2>
             <table class="table table-striped">`
                 <thead>
                     <tr>
@@ -52,6 +52,24 @@
                         <td> {{ transfer.created_by }} </td>
                     </tr>
                     {% endfor %}
+                    
+                </tbody>
+            </table>
+            {% endif %}
+            {% if write_offs %}
+            <h2 class="mb-2 mt-4">Baixas</h2>
+            <table class="table table-striped">`
+                <thead>
+                    <tr>
+                        <th scope="col">Data</th>
+                        <th scope="col">Origem</th>
+                        <th scope="col">Destino</th>
+                        <th scope="col">Observações</th>
+                        <th scope="col">Responsável</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
                     {% for write_off in write_offs %}
                     <tr>
                         <td>{{ write_off.write_off_date }}</td>
@@ -59,7 +77,7 @@
                         {% if write_off.storage_type %}
                             <td>{{ write_off.storage_type}}</td>
                         {% else %}
-                            <td>{{ write_off.recomission_storage_type}} {% if write_off.recomission_shelf %} {{ write_off.recomission_shelf }} {% endif %} </td>
+                            <td>{{ write_off.recomission_storage_type}} {% if write_off.recomission_shelf %} {{ write_off.recomission_shelf }} {% elif write_off.recomission_room %} {{write_off.recomission_room}} {% elif write_off.recomission_hall %} {{write_off.recomission_hall}} {% elif write_off.recomission_building %} {{write_off.recomission_building}} {% endif %} </td>
                         {% endif %}
                         <td>{{ write_off.observations }}</td>
                         {% if write_off.created_by %}
@@ -71,9 +89,9 @@
                     {% endfor %}
                 </tbody>
             </table>
+            {% endif %}
         </div>
     </div>
-    {% endif %}
 
     {% if consumptions %}
 
