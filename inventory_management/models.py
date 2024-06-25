@@ -114,7 +114,7 @@ class ProductUnit(models.Model):
     product = models.ForeignKey("Product", on_delete=models.CASCADE, verbose_name="Produto")
     location = models.ForeignKey('inventory_management.StorageType',default=get_default_location, on_delete=models.CASCADE, verbose_name="Localização")
     building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Depósito", blank=True, null=True)
-    room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
+    room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, verbose_name="Sala", blank=True, null=True)
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
     shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira", blank=True, null=True)
     purchase_date = models.DateField("Data de Entrada", auto_now_add=True)
@@ -227,13 +227,16 @@ class StockTransfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto")
     origin_storage_type = models.ForeignKey('inventory_management.StorageType', on_delete=models.CASCADE, related_name='stocktransfer_origin', verbose_name="Origem")
+    origin_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, related_name="stocktransfer_origin_building", verbose_name="Depósito de Origem", blank=True, null=True)
+    origin_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, related_name="stocktransfer_origin_hall", verbose_name="Corredor de Origem", blank=True, null=True)
+    origin_room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, related_name="stocktransfer_origin_room", verbose_name="Sala de Origem", blank=True, null=True)
     origin_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, related_name="stocktransfer_origin_shelf", verbose_name="Prateleira de origem", blank=True, null=True)
     destination_storage_type = models.ForeignKey('inventory_management.StorageType', on_delete=models.CASCADE, verbose_name="Tipo do Depósito de Destino")
     destination_building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Depósito de Destino", blank=True, null=True)
-    destination_room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala de Destino", blank=True, null=True)
+    destination_room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, verbose_name="Sala de Destino", blank=True, null=True)
     destination_hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor de Destino", blank=True, null=True)
     destination_shelf = models.ForeignKey('inventory_management.Shelf', on_delete=models.CASCADE, verbose_name="Prateleira de Destino", blank=True, null=True)
-    transfer_date = models.DateField("Data da Transferência")
+    transfer_date = models.DateTimeField("Data da Transferência", auto_now_add= True)
     observations = models.TextField("Observações", blank=True, null=True)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='stock_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
@@ -243,19 +246,26 @@ class StockTransfer(models.Model):
     def clean(self):
         if self.product_unit.write_off:
             raise ValidationError("A unidade de produto foi baixada.")
-        if self.product_unit.shelf != self.origin_shelf or self.product_unit.location != self.origin_storage_type:
+        if self.product_unit.location != self.origin_storage_type:
             raise ValidationError("A unidade de produto não está na origem.")
-        if self.origin_storage_type == self.destination_storage_type and self.origin_shelf == self.destination_shelf:
-            raise ValidationError("A unidade de produto não pode ser transferida para o mesmo local.")
+        
             
 
     def save(self, *args, **kwargs):
         self.clean()
         self.product_unit.location = self.destination_storage_type
         self.product_unit.building = self.destination_building
-        self.product_unit.room = self.destination_room
         self.product_unit.hall = self.destination_hall
+        self.product_unit.room = self.destination_room
         self.product_unit.shelf = self.destination_shelf
+        if not self.destination_building:
+            self.product_unit.building = None
+        if not self.destination_hall:
+            self.product_unit.hall = None
+        if not self.destination_room:
+            self.product_unit.room = None
+        if not self.destination_shelf:
+            self.product_unit.shelf = None
         self.product_unit.save()
         super(StockTransfer, self).save(*args, **kwargs)
 
@@ -282,10 +292,10 @@ class Write_off(models.Model):
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE, verbose_name="Unidade de Produto", related_name='write_offs')
     origin = models.CharField("Origem", max_length=100, blank=True, null=True)
     storage_type = models.ForeignKey('inventory_management.StorageType',on_delete=models.CASCADE,verbose_name="Tipo de depósito",related_name='writeoff_origin', blank=True, null=True)
-    recomission_storage_type = models.ForeignKey('inventory_management.StorageType',on_delete=models.CASCADE,verbose_name="Área de Recomissão", blank=True, null=True)
+    recomission_storage_type = models.ForeignKey('inventory_management.StorageType',on_delete=models.CASCADE,verbose_name="Área de Recomissão",related_name="recomission_destination", blank=True, null=True)
     recomission_building = models.ForeignKey('inventory_management.Building',on_delete=models.CASCADE,verbose_name="Depósito de Recomissão", blank=True, null=True)
-    recomission_room = models.ForeignKey('inventory_management.Room',on_delete=models.CASCADE,verbose_name="Sala de Recomissão", blank=True, null=True)
     recomission_hall = models.ForeignKey('inventory_management.Hall',on_delete=models.CASCADE,verbose_name="Corredor de Recomissão", blank=True, null=True)
+    recomission_room = models.ForeignKey('inventory_management.Rooms',on_delete=models.CASCADE,verbose_name="Sala de Recomissão", blank=True, null=True)
     recomission_shelf = models.ForeignKey('inventory_management.Shelf',on_delete=models.CASCADE,verbose_name="Prateleira da Recomissão", blank=True, null=True)
     write_off_date = models.DateTimeField("Data de Baixa", auto_now_add=True)
     observations = models.TextField("Observações", blank=True, null=True)
@@ -320,6 +330,9 @@ class Building(models.Model):
     neighborhood = models.CharField("Bairro", max_length=100)
     city = models.CharField("Cidade", max_length=100)
     state = models.CharField("Estado (UF)", max_length=2)
+    has_hall = models.BooleanField("Possui Corredor?", default=False)
+    has_room = models.BooleanField("Possui Sala?", default=False)
+    has_shelf = models.BooleanField("Possui Gaveta?", default=False)
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='building_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
@@ -341,62 +354,87 @@ class Building(models.Model):
         verbose_name = "Depósito"
 
 
-class Room(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField("Nome da Sala", max_length=100)
-    building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
-    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
-    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='room_created_by', null=True, editable=False)
-    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
-    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='room_updated_by', null=True, editable=False)
-    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
-
-    def address(self):
-        return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} "
-
-    def save(self, *args, **kwargs):
-        self.slug = slugify(self.id)
-        super(Room, self).save(*args, **kwargs)
-
-    def __str__(self):
-        return f'{self.building.name} - Sala {self.name}'
-
-    class Meta:
-        verbose_name_plural = "Salas"
-        verbose_name = "Sala"
-        ordering = ['building', 'name']
-
 class Hall (models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome do Corredor", max_length=100)
-    room = models.ForeignKey('inventory_management.Room', on_delete=models.CASCADE, verbose_name="Sala")
+    building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Prédio")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='hall_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='hall_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
+    def clean(self):
+      if self.building.has_hall == False:
+            raise ValidationError("Esse prédio não possui corredores.")
+
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)
         super(Hall, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.room} - Corredor {self.name}'
+        return f'{self.building.name} - Corredor {self.name}'
+        
 
     class Meta:
         verbose_name_plural = "Corredores"
         verbose_name = "Corredor"
         ordering = ['name']
+
+class Rooms(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField("Nome da Sala", max_length=100)
+    building = models.ForeignKey(Building, on_delete=models.CASCADE, verbose_name="Prédio")
+    hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor", blank=True, null=True)
+    slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
+    created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='room_created_by', null=True, editable=False)
+    created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
+    updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='room_updated_by', null=True, editable=False)
+    updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def clean(self):
+        if self.building.has_room == False:
+            raise ValidationError("Esse prédio não possui salas.")
+        if self.hall and self.building.has_hall == False:
+            raise ValidationError("Esse prédio não possui corredores.")
+
+    def address(self):
+        return f"{self.building.street}, {self.building.number} - {self.building.neighborhood}, {self.building.city} - {self.building.state}, {self.building.cep} - Sala {self.name} "
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.id)
+        super(Rooms, self).save(*args, **kwargs)
+
+    def __str__(self):
+        if self.hall:
+            return f'{self.hall} - Sala {self.name}'
+        return f'{self.building} - Sala {self.name}'
+
+
+    class Meta:
+        verbose_name_plural = "Salas"
+        verbose_name = "Sala"
+        ordering = ['building', 'name']
         
 class Shelf (models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField("Nome da Prateleira", max_length=100)
+    building = models.ForeignKey('inventory_management.Building', on_delete=models.CASCADE, verbose_name="Depósito")
     hall = models.ForeignKey('inventory_management.Hall', on_delete=models.CASCADE, verbose_name="Corredor")
+    room = models.ForeignKey('inventory_management.Rooms', on_delete=models.CASCADE, verbose_name="Sala")
     slug = models.SlugField("Slug", max_length=100, blank=True, null=True, editable=False)
     created_by = models.ForeignKey('auth.User', verbose_name=_('Criado por'), on_delete=models.CASCADE, related_name='shelf_created_by', null=True, editable=False)
     created_at = models.DateTimeField(_('Criado em'), auto_now_add=True, null=True, editable=False)
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='shelf_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
+
+    def clean(self):
+        if self.building.has_shelf == False:
+            raise ValidationError("Esse prédio não possui prateleiras.")
+        if self.hall and self.building.has_hall == False:
+            raise ValidationError("Esse prédio não possui corredores.")
+        if self.room and self.building.has_room == False:
+            raise ValidationError("Esse prédio não possui salas.")
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.id)

@@ -95,7 +95,7 @@ class ProductUnitDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context['storage_types'] = StorageType.objects.exclude(name="Baixa")
         context['buildings'] = Building.objects.all()
-        context['rooms'] = Room.objects.all()
+        context['rooms'] = Rooms.objects.all()
         context['halls'] = Hall.objects.all()
         context['shelves'] = Shelf.objects.exclude(pk=self.get_object().location.id)
         context['consumptions'] = ClothConsumption.objects.filter(product_unit=self.get_object())
@@ -155,11 +155,14 @@ class ProductUnitDetailView(DetailView):
         shelf_id = request.POST.get('shelf')
         storage_type = StorageType.objects.get_or_create(name="Baixa")[0]
 
+        product_unit.location_id = location_id
+        room = Rooms.objects.get(pk=room_id) if room_id else None
+        building = Building.objects.get(pk=building_id) if building_id else None
+        hall = Hall.objects.get(pk=hall_id) if hall_id else None
+        shelf = Shelf.objects.get(pk=shelf_id) if shelf_id else None
+
+
         if location.name == "Depósito":
-            building = Building.objects.get(pk=building_id)
-            room = Room.objects.get(pk=room_id)
-            hall = Hall.objects.get(pk=hall_id)
-            shelf = Shelf.objects.get(pk=shelf_id)
             storage_type = StorageType.objects.get_or_create(name="Baixa")[0]
 
             Write_off.objects.create(
@@ -176,10 +179,18 @@ class ProductUnitDetailView(DetailView):
                 write_off_destination=None,
                 created_by = request.user,
             )
-            product_unit.building_id = building_id
-            product_unit.room_id = room_id
-            product_unit.hall_id = hall_id
-            product_unit.shelf_id = shelf_id
+            if room_id:
+                product_unit.room_id = room_id
+            else:
+                product_unit.room_id = None
+            if hall_id:
+                product_unit.hall_id = hall_id
+            else:
+                product_unit.hall_id = None
+            if shelf_id:
+                product_unit.shelf_id = shelf_id
+            else:
+                product_unit.shelf_id = None
         else:
             Write_off.objects.create(
             product_unit=product_unit,
@@ -192,12 +203,7 @@ class ProductUnitDetailView(DetailView):
             created_by = request.user,
         )
 
-        product_unit.location_id = location_id
-        product_unit.building = None
-        product_unit.room = None
-        product_unit.hall = None
-        product_unit.shelf = None
-
+       
 
         consumption = request.POST.get('remainder')
         if consumption:
@@ -230,51 +236,61 @@ class ProductUnitDetailView(DetailView):
         destination = StorageType.objects.get(pk=destination_id)
         
         if destination.name == "Depósito":
-            building = Building.objects.get(pk=building_id)
-            room = Room.objects.get(pk=room_id)
-            hall = Hall.objects.get(pk=hall_id)
-            shelf = Shelf.objects.get(pk=shelf_id)
+            if building_id:
+                building = Building.objects.get(pk=building_id)
+            else:
+                building = None
+            if room_id:
+                room = Rooms.objects.get(pk=room_id)
+            else:
+                room = None
+            if hall_id:
+                hall = Hall.objects.get(pk=hall_id)
+            else:
+                hall = None
+            if shelf_id:
+                shelf = Shelf.objects.get(pk=shelf_id)
+            else:
+                shelf = None
         else:
             building = None
             room = None
             hall = None
             shelf = None
         
-        if product_unit.shelf:
-            StockTransfer.objects.create(
+        StockTransfer.objects.create(
                 product_unit=product_unit,
                 origin_storage_type=origin,
+                origin_building=product_unit.building,
+                origin_hall=product_unit.hall,
+                origin_room=product_unit.room,
                 origin_shelf=product_unit.shelf,
                 destination_storage_type=destination,
                 destination_shelf=shelf,
                 destination_building=building,
                 destination_room=room,
                 destination_hall=hall,
-                transfer_date=date.today(),
+                transfer_date=timezone.now(),
                 observations=observations,
                 created_by=request.user,
-            )
-        else:
-            StockTransfer.objects.create(
-                product_unit=product_unit,
-                origin_storage_type=origin,
-                destination_storage_type=destination,
-                destination_shelf=shelf,
-                destination_building=building,
-                destination_room=room,
-                destination_hall=hall,
-                transfer_date=date.today(),
-                observations=observations,
-                created_by=request.user,
-            )
+        )
         
         product_unit.location = destination
         
         if destination.name == "Depósito":
             product_unit.building_id = building_id
-            product_unit.room_id = room_id
-            product_unit.hall_id = hall_id
-            product_unit.shelf_id = shelf_id
+            if hall_id:
+                product_unit.hall_id = hall_id
+            else:
+                product_unit.hall_id = None
+            if room_id:
+                product_unit.room_id = room_id
+            else:
+                product_unit.room_id = None
+            if shelf_id:
+                product_unit.shelf_id = shelf_id
+            else:
+                product_unit.shelf_id = None
         else:
             product_unit.building_id = None
             product_unit.room_id = None
@@ -309,7 +325,7 @@ class GetProductLocationShelfView(View):
         product_unit_id = kwargs.get('product_unit_id')
         try:
             product_unit = ProductUnit.objects.get(id=product_unit_id)
-            return JsonResponse({'location': product_unit.location_id, 'shelf': product_unit.shelf_id})
+            return JsonResponse({'location': product_unit.location_id, 'building': product_unit.building_id, 'room': product_unit.room_id, 'hall': product_unit.hall_id, 'shelf': product_unit.shelf_id})
         except ProductUnit.DoesNotExist:
             return JsonResponse({}, status=404)
     
@@ -442,7 +458,7 @@ class WorkSpaceView(ListView):
         context['storage_types'] = StorageType.objects.exclude(name="Baixa")
         context['shelves'] = Shelf.objects.all()
         context['buildings'] = Building.objects.all()
-        context['rooms'] = Room.objects.all()
+        context['rooms'] = Rooms.objects.all()
         context['halls'] = Hall.objects.all()
         return context
         
@@ -520,10 +536,22 @@ class WorkSpaceView(ListView):
             destination = StorageType.objects.get(pk=location_id)
 
             if destination.name == "Depósito":
-                building = Building.objects.get(pk=building_id)
-                room = Room.objects.get(pk=room_id)
-                hall = Hall.objects.get(pk=hall_id)
-                shelf = Shelf.objects.get(pk=shelf_id)
+                if building_id:
+                    building = Building.objects.get(pk=building_id)
+                else:
+                    building = None
+                if room_id:
+                    room = Rooms.objects.get(pk=room_id)
+                else:
+                    room = None
+                if hall_id:
+                    hall = Hall.objects.get(pk=hall_id)
+                else:
+                    hall = None
+                if shelf_id:
+                    shelf = Shelf.objects.get(pk=shelf_id)
+                else:
+                    shelf = None
             else:
                 building = None
                 room = None
@@ -533,24 +561,14 @@ class WorkSpaceView(ListView):
             for product in WorkSpace.objects.filter(user=request.user):
                 product_unit = product.product
 
-                if product_unit.shelf:
-                    StockTransfer.objects.create(
+
+                StockTransfer.objects.create(
                         product_unit=product_unit,
                         origin_storage_type=product_unit.location,
+                        origin_building=product_unit.building,
+                        origin_hall=product_unit.hall,
+                        origin_room=product_unit.room,
                         origin_shelf=product_unit.shelf,
-                        destination_storage_type=destination,
-                        destination_shelf=shelf,
-                        destination_building=building,
-                        destination_room=room,
-                        destination_hall=hall,
-                        transfer_date=date.today(),
-                        observations=observations,
-                        created_by=request.user,
-                    )
-                else:
-                    StockTransfer.objects.create(
-                        product_unit=product_unit,
-                        origin_storage_type=product_unit.location,
                         destination_storage_type=destination,
                         destination_shelf=shelf,
                         destination_building=building,
@@ -579,23 +597,43 @@ class WorkSpaceView(ListView):
             WorkSpace.objects.filter(user=request.user).delete()
             return JsonResponse({'success': 'Produtos transferidos com sucesso', 'transfer': True, 'reload': True}, status=200)
 
-            
 
-def get_rooms(request):
+def get_building_properties(request):
     building_id = request.GET.get('building_id')
-    rooms = Room.objects.filter(building_id=building_id)
-    data = [{'id': room.id, 'name': room.name} for room in rooms]
-    return JsonResponse(data, safe=False)
+    building = Building.objects.get(id=building_id)
+    properties = {
+        'has_hall': building.has_hall,
+        'has_room': building.has_room,
+        'has_shelf': building.has_shelf
+    }
+    return JsonResponse(properties)
 
 def get_halls(request):
-    room_id = request.GET.get('room_id')
-    halls = Hall.objects.filter(room_id=room_id)
+    building_id = request.GET.get('building_id')
+    halls = Hall.objects.filter(building_id=building_id)
     data = [{'id': hall.id, 'name': hall.name} for hall in halls]
     return JsonResponse(data, safe=False)
 
-def get_shelves(request):
+def get_rooms(request):
+    building_id = request.GET.get('building_id')
     hall_id = request.GET.get('hall_id')
-    shelves = Shelf.objects.filter(hall_id=hall_id)
+    if hall_id:
+        rooms = Rooms.objects.filter(hall_id=hall_id)
+    else:
+        rooms = Rooms.objects.filter(building_id=building_id, hall__isnull=True)
+    data = [{'id': room.id, 'name': room.name} for room in rooms]
+    return JsonResponse(data, safe=False)
+
+def get_shelves(request):
+    building_id = request.GET.get('building_id')
+    hall_id = request.GET.get('hall_id')
+    room_id = request.GET.get('room_id')
+    if room_id:
+        shelves = Shelf.objects.filter(room_id=room_id)
+    elif hall_id:
+        shelves = Shelf.objects.filter(hall_id=hall_id)
+    else:
+        shelves = Shelf.objects.filter(building_id=building_id)
     data = [{'id': shelf.id, 'name': shelf.name} for shelf in shelves]
     return JsonResponse(data, safe=False)
 
