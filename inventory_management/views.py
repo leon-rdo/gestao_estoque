@@ -581,6 +581,7 @@ def get_write_off_status(request, product_unit_id):
 
 class DashboardView(TemplateView):
     template_name = 'admin/dashboard.html'
+<<<<<<< Updated upstream
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -673,3 +674,5 @@ class DashboardView(TemplateView):
         })
 
         return context
+=======
+>>>>>>> Stashed changes

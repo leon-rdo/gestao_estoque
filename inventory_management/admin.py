@@ -178,7 +178,13 @@ class StockTransferAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'transfer_date', 'created_by', 'created_at', 'updated_by', 'updated_at')
     search_fields = ('product_unit__product__name', 'origin__name', 'destination__name')
     list_filter = ('transfer_date', 'origin_shelf', 'destination_shelf')
+<<<<<<< Updated upstream
     fields = ['product_unit', 'origin_transfer_area', 'origin_shelf', 'destination_transfer_area','destination_building', 'destination_room', 'destination_hall', 'destination_shelf', 'transfer_date', 'observations']
+=======
+    fields = ['product_unit', 'origin_storage_type','origin_building','origin_hall','origin_room', 'origin_shelf', 'destination_storage_type','destination_building', 'destination_hall', 'destination_room', 'destination_shelf', 'observations']
+
+    
+>>>>>>> Stashed changes
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
