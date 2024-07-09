@@ -8,23 +8,23 @@ import matplotlib.dates as mdates
 from datetime import timedelta, datetime
 from django.utils import timezone
 from django.db.models import Sum, F, Count
-from inventory_management.models import ProductUnit, StockTransfer, Write_off, Product
+from inventory_management.models import ProductUnit, StockTransfer, Write_off, Product, Building
 from django.db.models.functions import TruncMonth
 from django.db.models import ExpressionWrapper, DecimalField
+import numpy as np
 
 sys.path.append('/home/erick/vscode/veloz/gestao_estoque')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'gestao_estoque.settings'
 django.setup()
 
-def load_data():
-    product_id = st.sidebar.text_input("Product ID", "")
-
-    product_units = ProductUnit.objects.all()
-    if product_id:
-        product_units = product_units.filter(product_id=product_id)
+def load_data(product_filter, building_filter):
+    # Filter ProductUnits based on write-off status and optional product filter
+    product_units = ProductUnit.objects.filter(write_off=False)
+    if product_filter and product_filter != "Todos":
+        product_units = product_units.filter(product__name=product_filter)
 
     stock_quantity_over_time = []
-    today = timezone.localtime(timezone.now()).date()  # Obter a data local atual
+    today = timezone.localtime(timezone.now()).date()
 
     total_quantity = product_units.aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
 
@@ -43,19 +43,44 @@ def load_data():
         month=TruncMonth('write_off_date')
     ).values('month').annotate(total=Count('id'))
 
-    product_movements = []
-    first_day_of_current_month = datetime(today.year, today.month, 1).date()  # Primeiro dia do mês atual
+    # Filter StockTransfers based on the optional building filter
+    transfers = StockTransfer.objects.all().select_related(
+        'product_unit', 'destination_building'
+    ).values(
+        'product_unit__product__name', 'destination_building__name'
+    ).annotate(
+        total=Count('id')
+    )
+    if building_filter and building_filter != "Todos":
+        transfers = transfers.filter(destination_building__name=building_filter)
 
-    for product_unit in product_units:
-        movements = StockTransfer.objects.filter(product_unit=product_unit, transfer_date__gte=first_day_of_current_month).order_by('transfer_date')
-        if movements.exists():
-            dates = [movement.transfer_date.date() for movement in movements]  # Apenas a parte da data sem o horário
-            quantities = [movement.product_unit.quantity for movement in movements]
-            product_movements.append({
-                'product_name': product_unit.product.name,
-                'dates': dates,
-                'quantities': quantities
-            })
+    stacked_data = {}
+    for transfer in transfers:
+        product_name = transfer['product_unit__product__name']
+        destination_building = transfer['destination_building__name']
+        if destination_building not in stacked_data:
+            stacked_data[destination_building] = {}
+        stacked_data[destination_building][product_name] = transfer['total']
+
+    # Prepare data for stacked bar chart
+    building_names = list(stacked_data.keys())
+    product_names = list(set(item for sublist in [list(v.keys()) for v in stacked_data.values()] for item in sublist))
+    product_names.sort()
+
+    stacked_values = []
+    for product_name in product_names:
+        values = [stacked_data[building_name].get(product_name, 0) for building_name in building_names]
+        stacked_values.append(values)
+
+    all_transfers = StockTransfer.objects.all()
+
+    # Calculate transfer counts over the last 30 days
+    today = timezone.localtime(timezone.now()).date()
+    transfer_counts_over_time = []
+    for i in range(30):
+        date = today - timedelta(days=i)
+        count_on_date = all_transfers.filter(transfer_date__date=date).count()
+        transfer_counts_over_time.append({'date': date, 'count': count_on_date})
 
     total_quantities = ProductUnit.get_total_quantity()
     return {
@@ -64,19 +89,28 @@ def load_data():
         'stock_quantity_over_time': stock_quantity_over_time[::-1],
         'write_off_data': write_off_data,
         'products': Product.objects.all(),
-        'product_movements': product_movements,
+        'buildings': Building.objects.all(),
         'total_write_off_value': total_write_off_value,
         'write_off_products_number': product_units.filter(write_off=True).count(),
         'overall_value': overall_value,
+        'all_transfers': all_transfers,
+        'transfer_counts_over_time': transfer_counts_over_time,
+        'stacked_chart_data': {
+            'product_names': product_names,
+            'building_names': building_names,
+            'stacked_values': np.array(stacked_values)
+        },
     }
 
 def main():
     st.title("Dashboard")
-    context = load_data()
+    context = load_data(None, None)  # Initial load without filters
 
-    st.sidebar.header("Filter")
-    product_filter = st.sidebar.selectbox("Filter by Product:", ["Todos"] + [product.name for product in context['products']])
-    st.sidebar.button("Filtrar")
+    st.sidebar.header("Filtros")
+    product_filter = st.sidebar.selectbox("Filtrar por Produto:", ["Todos"] + [product.name for product in context['products']])
+    building_filter = st.sidebar.selectbox("Filtrar por Depósito:", ["Todos"] + [building.name for building in context['buildings']])
+    if st.sidebar.button("Filtrar"):
+        context = load_data(product_filter, building_filter)
 
     tabs = st.tabs(["Estoque", "Baixas", "Movimentos de Estoque"])
 
@@ -103,24 +137,36 @@ def main():
         st.metric("Valor Total", f"R$ {context['total_write_off_value']}")
 
     with tabs[2]:
-        st.header("Movimentos de Estoque por Produto")
-        fig, ax = plt.subplots(figsize=(10, 6))
-        
-        for product_movement in context['product_movements']:
-            dates = product_movement['dates']
-            quantities = product_movement['quantities']
-            
-            # Converter as datas para matplotlib date format
-            dates = [mdates.date2num(date) for date in dates]
-            
-            ax.plot_date(dates, quantities, linestyle='-', marker=None, label=product_movement['product_name'])
+        st.header("Transferências realizadas")
+        st.metric("Total de Transferências", f"{context['all_transfers'].count()}")
 
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%Y'))  # Formato da data no eixo X
-        ax.set_xlabel('Data da Transferência')
-        ax.set_ylabel('Quantidade')
-        ax.set_title('Movimentos de Estoque por Produto')
-        ax.legend(loc='upper left')
-        plt.xticks(rotation=45)
+        st.header("Quantidade de Transferências de Estoque ao Longo do Tempo")
+        transfer_counts_data = pd.DataFrame(context['transfer_counts_over_time'])
+        if not transfer_counts_data.empty:
+            transfer_counts_data.set_index('date', inplace=True)
+            st.line_chart(transfer_counts_data)
+
+        st.header("Movimentos de Estoque por Depósito e Produto")
+
+        stacked_chart_data = context['stacked_chart_data']
+        building_names = stacked_chart_data['building_names']
+        product_names = stacked_chart_data['product_names']
+        stacked_values = stacked_chart_data['stacked_values']
+
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+        # Create stacked bar chart with swapped axes
+        ax.bar(building_names, stacked_values[0, :], label=product_names[0])
+        for i in range(1, len(product_names)):
+            ax.bar(building_names, stacked_values[i, :], bottom=np.sum(stacked_values[:i, :], axis=0), label=product_names[i])
+
+        ax.set_ylabel('Quantidade de Movimentação')
+        ax.set_xlabel('Depósito')
+        ax.set_title('Movimentos de Estoque por Depósito e Produto')
+        ax.legend()
+
+        plt.xticks(rotation=45, ha='right')
+
         st.pyplot(fig)
 
 if __name__ == "__main__":

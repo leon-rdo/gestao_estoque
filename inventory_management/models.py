@@ -189,7 +189,7 @@ class ProductUnit(models.Model):
             self.code = f"PRD-{new_number}"
         
     def __str__(self):
-        return self.product.name
+        return self.product.name + " - " + self.code
 
     class Meta:
         verbose_name_plural = "Unidades de Produto"
