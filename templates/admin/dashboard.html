@@ -1,6 +1,14 @@
 {% extends 'admin/base.html' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
+
+<!--COMO RODAR O DASH:
+1. Verifique o caminho do arquivo dashboard.py
+2. Abra o terminal e digite: streamlit run app.py
+3. Verifique em qual porta o servidor está rodando
+4. Substitua a porta no iframe abaixo (se necessário)
+5. Rode o servidor do Django normalmente e acesse a página de dashboard, se tudo estiver correto, o dashboard será exibido.
+-->
     <h1>Dashboard</h1>
     <iframe src="http://localhost:8501" width="100%" height="800"></iframe>
 {% endblock %}

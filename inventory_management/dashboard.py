@@ -13,12 +13,12 @@ from django.db.models.functions import TruncMonth
 from django.db.models import ExpressionWrapper, DecimalField
 import numpy as np
 
-sys.path.append('/home/erick/vscode/veloz/gestao_estoque')
+#Coloque o diretório do projeto no sys.path
+sys.path.append('')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'gestao_estoque.settings'
 django.setup()
 
 def load_data(product_filter, building_filter):
-    # Filter ProductUnits based on write-off status and optional product filter
     product_units = ProductUnit.objects.filter(write_off=False)
     if product_filter and product_filter != "Todos":
         product_units = product_units.filter(product__name=product_filter)
@@ -43,7 +43,6 @@ def load_data(product_filter, building_filter):
         month=TruncMonth('write_off_date')
     ).values('month').annotate(total=Count('id'))
 
-    # Filter StockTransfers based on the optional building filter
     transfers = StockTransfer.objects.all().select_related(
         'product_unit', 'destination_building'
     ).values(
@@ -62,7 +61,6 @@ def load_data(product_filter, building_filter):
             stacked_data[destination_building] = {}
         stacked_data[destination_building][product_name] = transfer['total']
 
-    # Prepare data for stacked bar chart
     building_names = list(stacked_data.keys())
     product_names = list(set(item for sublist in [list(v.keys()) for v in stacked_data.values()] for item in sublist))
     product_names.sort()
@@ -74,7 +72,6 @@ def load_data(product_filter, building_filter):
 
     all_transfers = StockTransfer.objects.all()
 
-    # Calculate transfer counts over the last 30 days
     today = timezone.localtime(timezone.now()).date()
     transfer_counts_over_time = []
     for i in range(30):
@@ -104,7 +101,7 @@ def load_data(product_filter, building_filter):
 
 def main():
     st.title("Dashboard")
-    context = load_data(None, None)  # Initial load without filters
+    context = load_data(None, None)  
 
     st.sidebar.header("Filtros")
     product_filter = st.sidebar.selectbox("Filtrar por Produto:", ["Todos"] + [product.name for product in context['products']])
@@ -155,7 +152,6 @@ def main():
 
         fig, ax = plt.subplots(figsize=(10, 8))
 
-        # Create stacked bar chart with swapped axes
         ax.bar(building_names, stacked_values[0, :], label=product_names[0])
         for i in range(1, len(product_names)):
             ax.bar(building_names, stacked_values[i, :], bottom=np.sum(stacked_values[:i, :], axis=0), label=product_names[i])
