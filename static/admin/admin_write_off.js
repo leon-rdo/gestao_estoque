@@ -1,51 +1,95 @@
 $(document).ready(function() {
     var isCreationMode = window.location.href.indexOf('/add/') !== -1;
-    
-    
+
     function updateFields() {
         if (!isCreationMode) {
-            $('.field-recomission_building').hide();
-            $('.field-recomission_room').hide();
-            $('.field-recomission_hall').hide();
-            $('.field-recomission_shelf').hide();
             return;
         }
+        var locationSelected = $('#id_recomission_storage_type option:selected').text().trim();
 
-        var locationSelected = $('#id_recomission_transfer_area option:selected').text().trim();
-        var buildingSelected = $('#id_recomission_building').val();
-        var roomSelected = $('#id_recomission_room').val();
-        var hallSelected = $('#id_recomission_hall').val();
-        var shelfSelected = $('#id_recomission_shelf').val(); 
-
-        if (locationSelected === "Loja") {
+        if (locationSelected === "Depósito") {
             $('.field-recomission_building').show();
         } else {
             $('.field-recomission_building').hide();
         }
 
+        var buildingSelected = $('#id_recomission_building').val();
         if (buildingSelected) {
-            $('.field-recomission_room').show();
-            updateRooms(buildingSelected, roomSelected);
-        } else {
-            $('.field-recomission_room').hide();
-        }
+            getBuildingProperties(buildingSelected).then(function(properties) {
+                var hallSelected = $('#id_recomission_hall').val();
+                var roomSelected = $('#id_recomission_room').val();
+                var shelfSelected = $('#id_recomission_shelf').val();
 
-        if (roomSelected) {
-            $('.field-recomission_hall').show();
-            updateHalls(roomSelected, hallSelected);
+                if (properties.has_hall) {
+                    $('.field-recomission_hall').show();
+                    updateHalls(buildingSelected, hallSelected);
+                } else {
+                    $('.field-recomission_hall').hide();
+                }
+
+                if (properties.has_room) {
+                    $('.field-recomission_room').show();
+                    if (hallSelected) {
+                        updateRoomsByHall(hallSelected, roomSelected);
+                    } else {
+                        updateRoomsByBuilding(buildingSelected, roomSelected);
+                    }
+                } else {
+                    $('.field-recomission_room').hide();
+                }
+
+                if (properties.has_shelf) {
+                    $('.field-recomission_shelf').show();
+                    if (roomSelected) {
+                        updateShelvesByRoom(roomSelected, shelfSelected);
+                    } else if (hallSelected) {
+                        updateShelvesByHall(hallSelected, shelfSelected);
+                    } else {
+                        updateShelvesByBuilding(buildingSelected, shelfSelected);
+                    }
+                } else {
+                    $('.field-recomission_shelf').hide();
+                }
+            });
         } else {
             $('.field-recomission_hall').hide();
-        }
-
-        if (hallSelected) {
-            $('.field-recomission_shelf').show();
-            updateShelves(hallSelected, shelfSelected);
-        } else {
+            $('.field-recomission_room').hide();
             $('.field-recomission_shelf').hide();
         }
     }
 
-    function updateRooms(buildingId, selectedRoom) {
+    function getBuildingProperties(buildingId) {
+        return $.ajax({
+            url: '/get-building-properties/',
+            data: { 'building_id': buildingId }
+        });
+    }
+
+    function updateHalls(buildingId, selectedHall) {
+        if (!buildingId) {
+            return;
+        }
+
+        $.ajax({
+            url: '/get-halls/',
+            data: {
+                'building_id': buildingId
+            },
+            success: function(data) {
+                $('#id_recomission_hall').empty();
+                $('#id_recomission_hall').append($('<option>').text('---------').attr('value', ''));
+                $.each(data, function(index, value) {
+                    var option = $('<option>').text(value.name).attr('value', value.id);
+                    if (value.id == selectedHall) {
+                        option.attr('selected', 'selected');
+                    }
+                    $('#id_recomission_hall').append(option);
+                });
+            }
+        });
+    }
+
+    function updateRoomsByBuilding(buildingId, selectedRoom) {
         if (!buildingId) {
             return;
         }
@@ -69,31 +113,55 @@ $(document).ready(function() {
         });
     }
 
-    function updateHalls(roomId, selectedHall) {
-        if (!roomId) {
+    function updateRoomsByHall(hallId, selectedRoom) {
+        if (!hallId) {
             return;
         }
 
         $.ajax({
-            url: '/get-halls/',
+            url: '/get-rooms/',
             data: {
-                'room_id': roomId
+                'hall_id': hallId
             },
             success: function(data) {
-                $('#id_recomission_hall').empty();
-                $('#id_recomission_hall').append($('<option>').text('---------').attr('value', ''));
+                $('#id_recomission_room').empty();
+                $('#id_recomission_room').append($('<option>').text('---------').attr('value', ''));
                 $.each(data, function(index, value) {
                     var option = $('<option>').text(value.name).attr('value', value.id);
-                    if (value.id == selectedHall) {
+                    if (value.id == selectedRoom) {
                         option.attr('selected', 'selected');
                     }
-                    $('#id_recomission_hall').append(option);
+                    $('#id_recomission_room').append(option);
                 });
             }
         });
     }
 
-    function updateShelves(hallId, selectedShelf) {
+    function updateShelvesByBuilding(buildingId, selectedShelf) {
+        if (!buildingId) {
+            return;
+        }
+
+        $.ajax({
+            url: '/get-shelves/',
+            data: {
+                'building_id': buildingId
+            },
+            success: function(data) {
+                $('#id_recomission_shelf').empty();
+                $('#id_recomission_shelf').append($('<option>').text('---------').attr('value', ''));
+                $.each(data, function(index, value) {
+                    var option = $('<option>').text(value.name).attr('value', value.id);
+                    if (value.id == selectedShelf) {
+                        option.attr('selected', 'selected');
+                    }
+                    $('#id_recomission_shelf').append(option);
+                });
+            }
+        });
+    }
+
+    function updateShelvesByHall(hallId, selectedShelf) {
         if (!hallId) {
             return;
         }
@@ -117,7 +185,31 @@ $(document).ready(function() {
         });
     }
 
-    $('#id_recomission_transfer_area').change(function() {
+    function updateShelvesByRoom(roomId, selectedShelf) {
+        if (!roomId) {
+            return;
+        }
+
+        $.ajax({
+            url: '/get-shelves/',
+            data: {
+                'room_id': roomId
+            },
+            success: function(data) {
+                $('#id_recomission_shelf').empty();
+                $('#id_recomission_shelf').append($('<option>').text('---------').attr('value', ''));
+                $.each(data, function(index, value) {
+                    var option = $('<option>').text(value.name).attr('value', value.id);
+                    if (value.id == selectedShelf) {
+                        option.attr('selected', 'selected');
+                    }
+                    $('#id_recomission_shelf').append(option);
+                });
+            }
+        });
+    }
+
+    $('#id_recomission_storage_type').change(function() {
         updateFields();
     });
 
@@ -125,17 +217,18 @@ $(document).ready(function() {
         updateFields();
     });
 
-    $('#id_recomission_room').change(function() {
-        updateFields();
-    });
-
     $('#id_recomission_hall').change(function() {
         updateFields();
     });
 
-    updateFields();  // Para a inicialização no carregamento da página
+    $('#id_recomission_room').change(function() {
+        updateFields();
+    });
 
-    // Função para atualizar os campos com base na unidade de produto selecionada
+    updateFields();
+
+
+    
     function updateWriteOffFields() {
         var selectedProductUnit = $('#id_product_unit').val();
         
@@ -146,20 +239,20 @@ $(document).ready(function() {
                 success: function(data) {
                     var writeOffStatus = data.write_off;
                     if (writeOffStatus === false) {
-                        $('.field-transfer_area').show();
+                        $('.field-storage_type').show();
                         $('.field-write_off_destination').show();
-                        $('.field-recomission_transfer_area').hide();
+                        $('.field-recomission_storage_type').hide();
                     } else {
-                        $('.field-transfer_area').hide();
+                        $('.field-storage_type').hide();
                         $('.field-write_off_destination').hide();
-                        $('.field-recomission_transfer_area').show();
+                        $('.field-recomission_storage_type').show();
                     }
                 }
             });
         } else {
-            $('.field-transfer_area').hide();
+            $('.field-storage_type').hide();
             $('.field-write_off_destination').hide();
-            $('.field-recomission_transfer_area').hide();
+            $('.field-recomission_storage_type').hide();
             $('.field-recomission_building').hide();
             $('.field-recomission_room').hide();
             $('.field-recomission_hall').hide();

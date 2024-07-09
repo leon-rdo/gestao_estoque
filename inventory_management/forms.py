@@ -13,4 +13,4 @@ class QRCodeForm(forms.Form):
 
 class DashboardFilterForm(forms.Form):
     product = forms.ModelChoiceField(queryset=Product.objects.all(), required=False, label="Produto")
-    building = forms.ModelChoiceField(queryset=Building.objects.all(), required=False, label="Loja")
+    building = forms.ModelChoiceField(queryset=Building.objects.all(), required=False, label="Depósito")
