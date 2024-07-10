@@ -1,6 +1,13 @@
 import os
 import sys
 import django
+
+#Coloque o diretório do projeto no sys.path
+sys.path.append('')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'gestao_estoque.settings'
+django.setup()
+
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,10 +20,6 @@ from django.db.models.functions import TruncMonth
 from django.db.models import ExpressionWrapper, DecimalField
 import numpy as np
 
-#Coloque o diretório do projeto no sys.path
-sys.path.append('')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'gestao_estoque.settings'
-django.setup()
 
 def load_data(product_filter, building_filter):
     product_units = ProductUnit.objects.filter(write_off=False)
