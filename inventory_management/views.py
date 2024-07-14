@@ -14,9 +14,7 @@ from io import BytesIO
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count, Sum
-import pandas as pd
 from django.db.models import F, ExpressionWrapper, DecimalField
-import matplotlib.pyplot as plt
 import io
 import base64
 from decimal import Decimal
