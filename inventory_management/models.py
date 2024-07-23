@@ -147,12 +147,10 @@ class ProductUnit(models.Model):
 
             super(ProductUnit, self).save(*args, **kwargs)
 
-            # Atualiza o slug se necessário
             if not self.slug:
                 self.slug = slugify(f"{self.product.name}-{self.code}")
                 super(ProductUnit, self).save(update_fields=['slug'])
 
-            # Verifica se a quantidade é maior que 1 e cria novas unidades
             if self.quantity > 1:
                 existing_units_count = ProductUnit.objects.filter(product=self.product, code__startswith='PRD-').count()
 
@@ -174,7 +172,6 @@ class ProductUnit(models.Model):
                         new_unit.slug = slugify(f"{self.product.name}-{new_unit.code}")
                         new_unit.save()
                 
-                # Atualiza a quantidade do produto original para 1
                 ProductUnit.objects.filter(id=self.id).update(quantity=1)
 
     def clean(self):
