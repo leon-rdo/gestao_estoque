@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Upload Excel{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col d-flex justify-content-center">
+            <h1>Carregador dados</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col d-flex justify-content-center">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Carregar Dados</button>
+            </form>
+        </div>
+        {% if messages %}
+        <div class="messages mt-4">
+            {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

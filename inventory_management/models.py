@@ -85,7 +85,7 @@ class Product(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(f"{self.name}")
-        self.name = self.name.capitalize()
+        self.name = self.name.lower()
         super(Product, self).save(*args, **kwargs)
 
     @property

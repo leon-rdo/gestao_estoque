@@ -1,4 +1,5 @@
-from django.views.generic import TemplateView, ListView, DetailView
+from django.views.generic import TemplateView, ListView, DetailView, FormView
+from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.views import View
 from .models import *
@@ -30,6 +31,10 @@ from django.db.models.functions import TruncMonth
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from reportlab.pdfbase.ttfonts import TTFont
+from .forms import UploadExcelForm
+import openpyxl
+import pandas as pd
+
 
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -639,3 +644,65 @@ def get_write_off_status(request, product_unit_id):
 
 class DashboardView(TemplateView):
     template_name = 'admin/dashboard.html'
+    
+    
+from django.contrib import messages
+
+
+class UploadExcelView(View):
+    template_name = 'upload_excel.html'
+    
+    MEASURE_MAPPING = {
+        'KG': 'kg',
+        'MT': 'm',
+        'CM': 'cm',
+        'G': 'g',
+        'UND': 'u',
+        'UN': 'u'
+    }
+    
+    def get(self, request):
+        form = UploadExcelForm()
+        return render(request, self.template_name, {'form': form})
+    
+    def post(self, request):
+        form = UploadExcelForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            arquivo = request.FILES['file']
+            try:
+                df = pd.read_excel(arquivo, skiprows=1)
+                print("Nomes das colunas do DataFrame:", df.columns)  # Adiciona esta linha para inspecionar os nomes das colunas
+                df.columns = ['nome', 'preco', 'ncm', 'unidade']
+
+                produtos_adicionados = 0
+                produtos_atualizados = 0
+
+                for _, row in df.iterrows():
+                    created = self.criar_produto_ou_atualizar(row)
+                    if created:
+                        produtos_adicionados += 1
+                    else:
+                        produtos_atualizados += 1
+
+                messages.success(request, f'{produtos_adicionados} produtos foram adicionados e {produtos_atualizados} foram atualizados com sucesso.')
+            except Exception as e:
+                messages.error(request, f'Ocorreu um erro ao processar o arquivo: {e}')
+            
+            return redirect('inventory_management:load_data')
+
+        messages.error(request, 'Ocorreu um erro no upload do arquivo. Verifique o formato e tente novamente.')
+        return render(request, self.template_name, {'form': form})
+
+    def criar_produto_ou_atualizar(self, row):
+        unidade_mapeada = self.MEASURE_MAPPING.get(row['unidade'].upper(), 'u')
+        nome_lower = row['nome'].strip().lower()
+        produto, created = Product.objects.update_or_create(
+            name=nome_lower,
+            defaults={
+                'ncm': row['ncm'],
+                'price': row['preco'],
+                'measure': unidade_mapeada,
+            }
+        )
+        return created

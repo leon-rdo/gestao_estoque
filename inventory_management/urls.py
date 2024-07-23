@@ -20,4 +20,5 @@ urlpatterns = [
     path('get-shelves/', views.get_shelves, name='get_shelves'),
     path('get-write-off-status/<uuid:product_unit_id>/', get_write_off_status, name='get_write_off_status'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('carregar-dados/', UploadExcelView.as_view(), name='load_data'),
 ]
