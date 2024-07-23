@@ -75,7 +75,6 @@ class Product(models.Model):
     updated_by = models.ForeignKey('auth.User', verbose_name=_('Atualizado por'), on_delete=models.CASCADE, related_name='product_updated_by', null=True, editable=False)
     updated_at = models.DateTimeField(_('Atualizado em'), auto_now=True, null=True, editable=False)
 
-
     def get_measure(self):
         return self.get_measure_display()
 
@@ -143,35 +142,45 @@ class ProductUnit(models.Model):
             if not self.code:
                 self.generate_code()
 
-            super(ProductUnit, self).save(*args, **kwargs)
-
             if not self.slug:
                 self.slug = slugify(f"{self.product.name}-{self.code}")
-                self.save(update_fields=['slug'])
 
+            super(ProductUnit, self).save(*args, **kwargs)
+
+            # Atualiza o slug se necessário
+            if not self.slug:
+                self.slug = slugify(f"{self.product.name}-{self.code}")
+                super(ProductUnit, self).save(update_fields=['slug'])
+
+            # Verifica se a quantidade é maior que 1 e cria novas unidades
             if self.quantity > 1:
-                for i in range(1, self.quantity):
-                    new_unit = ProductUnit.objects.create(
-                        product=self.product,
-                        location=self.location,
-                        purchase_date=self.purchase_date,
-                        weight_length=self.weight_length,
-                        incoming=self.incoming,
-                        write_off=self.write_off,
-                        created_by=self.created_by,
-                        updated_by=self.updated_by,
-                        shelf=self.shelf
-                    )
-                    new_unit.generate_code()
-                    new_unit.slug = slugify(f"{self.product.name}-{new_unit.code}")
-                    new_unit.save()
-            
-            self.__class__.objects.filter(id=self.id).update(quantity=1)
+                existing_units_count = ProductUnit.objects.filter(product=self.product, code__startswith='PRD-').count()
+
+                if existing_units_count < self.quantity:
+                    for i in range(existing_units_count, self.quantity):
+                        new_unit = ProductUnit(
+                            product=self.product,
+                            location=self.location,
+                            purchase_date=self.purchase_date,
+                            weight_length=self.weight_length,
+                            incoming=self.incoming,
+                            write_off=self.write_off,
+                            created_by=self.created_by,
+                            updated_by=self.updated_by,
+                            shelf=self.shelf,
+                            quantity=1,
+                        )
+                        new_unit.generate_code()
+                        new_unit.slug = slugify(f"{self.product.name}-{new_unit.code}")
+                        new_unit.save()
+                
+                # Atualiza a quantidade do produto original para 1
+                ProductUnit.objects.filter(id=self.id).update(quantity=1)
 
     def clean(self):
         if self.quantity < 1:
             raise ValidationError("A quantidade deve ser maior que 0.")
-    
+
     def generate_code(self):
         last_unit = ProductUnit.objects.aggregate(Max('code'))
         last_code = last_unit['code__max']
@@ -187,7 +196,7 @@ class ProductUnit(models.Model):
         while ProductUnit.objects.filter(code=self.code).exists():
             new_number += 1
             self.code = f"PRD-{new_number}"
-        
+    
     def __str__(self):
         return self.product.name + " - " + self.code
 
