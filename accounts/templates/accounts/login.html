@@ -1,0 +1,50 @@
+{% extends "accounts/base.html" %}
+
+{% block title %}Formulário de Login{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+  <div class="col-md-6">
+    <div class="authentication-inner">
+      <!-- Login -->
+      <div class="card">
+        <div class="card-body">
+          <!-- Logo -->
+          <div class="app-brand justify-content-center">
+            <a href="#" class="app-brand-link gap-2">
+            </a>
+          </div>
+          <!-- /Logo -->
+          <h4 class="mb-2">Bem-vindo! 👋</h4>
+          <p class="mb-4">ao sistema de estoque.</p>
+
+          {% if messages %}
+            <div class="alert alert-danger">
+              {% for message in messages %}
+                <p>{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          
+
+          <form id="formAuthentication" class="mb-3" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="username" class="form-label">Usuário</label>
+              <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Senha</label>
+              <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <div class="mb-3">
+              <button class="btn btn-primary d-grid w-100" type="submit">Entrar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

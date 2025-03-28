@@ -1,0 +1,152 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f0f0, #e1e1e1);
+}
+
+#loginredi {
+  display: flex;
+  text-align: center;
+  justify-content: center;
+  margin-top: 15px;
+  padding-left: 5px;
+}
+
+.container {
+  position: relative;
+  max-width: 700px;
+  width: 100%;
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.container header {
+  font-size: 1.8rem;
+  color: #333;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form {
+  margin-top: 30px;
+}
+
+.form .input-box {
+  margin-top: 10px;
+}
+
+.form .input-box label {
+  margin-bottom: 4px;
+}
+
+.form :where(.input-box input, .select-box) {
+  margin-top: 0;
+  padding: 10px;
+}
+
+.form .column {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.form .gender-box {
+  margin-top: 20px;
+}
+
+.gender-box h3 {
+  color: #333;
+  font-size: 1rem;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.form :where(.gender-option, .gender) {
+  display: flex;
+  align-items: center;
+  column-gap: 50px;
+  flex-wrap: wrap;
+}
+
+.form .gender {
+  column-gap: 5px;
+}
+
+.gender input {
+  accent-color: #2487ce;
+}
+
+.form :where(.gender input, .gender label) {
+  cursor: pointer;
+}
+
+.gender label {
+  color: #707070;
+}
+
+.address :where(input, .select-box) {
+  margin-top: 15px;
+}
+
+.select-box select {
+  height: 50px;
+  width: 100%;
+  outline: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  color: #555;
+  font-size: 1rem;
+}
+
+.form button {
+  margin-top: 20px;
+}
+
+.form button:hover {
+  background: linear-gradient(135deg, #1d6da8, #2487ce);
+  transform: scale(1.05);
+}
+
+.welcome-message {
+  font-size: 1.1rem;
+  margin-top: 10px;
+  text-align: center;
+  font-weight: 400;
+}
+
+@media screen and (max-width: 500px) {
+  .form .column {
+    flex-wrap: wrap;
+  }
+  .form :where(.gender-option, .gender) {
+    row-gap: 15px;
+  }
+}
+
+/* Remove margens e paddings indesejados */
+form .row {
+  margin-bottom: 0;
+}
+
+form .col-md-6 {
+  padding: 0;
+}
+
+form div {
+  margin-bottom: 0 !important;
+}

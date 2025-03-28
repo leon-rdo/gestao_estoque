@@ -4,17 +4,32 @@ from django.urls import reverse
 from django.urls import path
 from django.shortcuts import redirect
 from django.utils.safestring import mark_safe
+import re
 
 import base64
 from io import BytesIO
 import qrcode
 from django.contrib import admin
 from .models import *
+from django.contrib.auth.models import Permission
+from django.db.models import IntegerField, Value
+from django.db.models.functions import Cast, Substr
 
 admin.site.site_header = 'Gestão de Estoque'
 admin.site.site_title = 'Administração'
 admin.site.index_title = 'Gestão de Estoque'
 
+
+@admin.register(Permission)
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'content_type', 'codename')
+    search_fields = ('name', 'codename')
+
+    def save_model(self, request, obj, form, change):
+        if not change:  
+            obj.created_by = request.user
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -73,18 +88,29 @@ class StockTransferInline(admin.TabularInline):
     
 @admin.register(ProductUnit)
 class ProductUnitAdmin(admin.ModelAdmin):
-    list_display = ('product', 'code' ,'location','shelf_or_none','weight_length_with_measure', 'write_off' , 'was_written_off' ,'qr_code_generated','purchase_date', "created_by", "created_at", "updated_by", "updated_at")
+    list_display = ('id', 'product', 'code', 'location', 'shelf_or_none', 'weight_length_with_measure',
+                    'write_off', 'was_written_off', 'qr_code_generated', 'purchase_date',
+                    "created_by", "created_at", "updated_by", "updated_at")
     search_fields = ('product__name', 'location__name', 'id', 'code')
-    list_filter = ('product' ,'purchase_date', 'location', 'write_off', 'was_written_off' ,'qr_code_generated')
-    fields = ['product', 'location', 'building', 'hall', 'room', 'shelf', 'quantity', 'weight_length', 'incoming',]
+    list_filter = ('purchase_date', 'location', 'building', 'hall', 'room', 'shelf',
+                   'write_off', 'was_written_off', 'qr_code_generated')
+    fields = ['product', 'quantity', 'weight_length', 'incoming']
     actions = [download_qr_codes, write_off_products, write_on_products]
     inlines = [ClothConsumptionInline, StockTransferInline]
+    
 
     class Media:
         js = (
             'https://code.jquery.com/jquery-3.6.0.min.js',
             'admin/product_unit_admin.js',
         )
+        
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            code_number=Cast(Substr('code', 5), IntegerField())
+        ).order_by('code_number')
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
@@ -97,16 +123,17 @@ class ProductUnitAdmin(admin.ModelAdmin):
             fieldsets[last_fieldset_index] = tuple(last_fieldset)
             
         return fieldsets
-    
+
     def shelf_or_none(self, obj):
-        if obj.shelf:
-            return obj.shelf
-        return "N/A"
-    shelf_or_none.short_description = 'Prateleira'
+        return obj.shelf if obj.shelf else "N/A"
+    shelf_or_none.short_description = 'Gaveta'
 
     def weight_length_with_measure(self, obj):
-        product_measure = obj.product.get_measure_display()
-        return f"{obj.weight_length} {product_measure}"
+        if obj.product.measure != 'u':
+            product_measure = obj.product.get_measure_display()
+            return f"{obj.weight_length} {product_measure}"
+        return "Unitário"
+    
     weight_length_with_measure.short_description = 'Metro/Kg'
 
     def qr_code_image(self, obj):
@@ -124,14 +151,17 @@ class ProductUnitAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if obj:
-            form.base_fields['quantity'].widget = forms.HiddenInput()
-            form.base_fields['weight_length'].disabled = True
-            form.base_fields['incoming'].disabled = True
+            if 'quantity' in form.base_fields:
+                form.base_fields['quantity'].widget = forms.HiddenInput()
+            if 'weight_length' in form.base_fields:
+                form.base_fields['weight_length'].disabled = True
+            if 'incoming' in form.base_fields:
+                form.base_fields['incoming'].disabled = True
         return form
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "location":
-            kwargs["queryset"] = StorageType.objects.exclude(name = "Baixa")
+            kwargs["queryset"] = StorageType.objects.exclude(name__in=["Baixa", "Conferência"])
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_readonly_fields(self, request, obj=None):
@@ -155,7 +185,24 @@ class ProductUnitAdmin(admin.ModelAdmin):
         return super().change_view(request, object_id, form_url, extra_context=extra_context)
 
     def add_view(self, request, form_url='', extra_context=None):
+        location = request.GET.get('location', None)
+        building = request.GET.get('building', None)
+        hall = request.GET.get('hall', None)
+        room = request.GET.get('room', None)
+        shelf = request.GET.get('shelf', None)
+        
+        # Passe os valores necessários para o template
         extra_context = extra_context or {}
+        extra_context['locations'] = StorageType.objects.all()
+        extra_context['buildings'] = Building.objects.all()
+        extra_context['halls'] = Hall.objects.all()
+        extra_context['rooms'] = Rooms.objects.all()
+        extra_context['shelves'] = Shelf.objects.all()
+        extra_context['current_location'] = location
+        extra_context['current_building'] = building
+        extra_context['current_hall'] = hall
+        extra_context['current_room'] = room
+        extra_context['current_shelf'] = shelf
         extra_context['show_custom_qr_button'] = True
         return super().add_view(request, form_url, extra_context=extra_context)
 
@@ -180,11 +227,9 @@ class ProductUnitAdmin(admin.ModelAdmin):
 @admin.register(StockTransfer)
 class StockTransferAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'transfer_date', 'created_by', 'created_at', 'updated_by', 'updated_at')
-    search_fields = ('product_unit__product__name', 'origin__name', 'destination__name')
+    search_fields = ('product_unit__product__name', 'origin_building__name', 'origin_hall__name', 'origin_room__name', 'origin_shelf__name', 'destination_building__name', 'destination_hall__name', 'destination_room__name', 'destination_shelf__name', 'product_unit__product__code')
     list_filter = ('transfer_date', 'origin_shelf', 'destination_shelf')
     fields = ['product_unit', 'origin_storage_type','origin_building','origin_hall','origin_room', 'origin_shelf', 'destination_storage_type','destination_building', 'destination_hall', 'destination_room', 'destination_shelf', 'observations']
-
-    
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -193,7 +238,7 @@ class StockTransferAdmin(admin.ModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "destination_storage_type":
-            kwargs["queryset"] = StorageType.objects.exclude(name = "Baixa")
+            kwargs["queryset"] = StorageType.objects.exclude(name__in=["Baixa", "Conferência"])
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
     
     class Media:
@@ -204,6 +249,7 @@ class StockTransferAdmin(admin.ModelAdmin):
             obj.created_by = request.user
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+
 
 
 @admin.register(Write_off)
@@ -220,7 +266,7 @@ class WriteOffAdmin(admin.ModelAdmin):
         if db_field.name == "storage_type":
             kwargs["queryset"] = StorageType.objects.filter(name = "Baixa")
         if db_field.name == "recomission_storage_type":
-            kwargs["queryset"] = StorageType.objects.exclude(name = "Baixa")
+            kwargs["queryset"] = StorageType.objects.exclude(name__in=["Baixa", "Conferência"])
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def write_off_destination_or_none(self, obj):
